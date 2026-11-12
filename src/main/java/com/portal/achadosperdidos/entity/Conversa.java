@@ -47,4 +47,10 @@ public class Conversa extends BaseEntity {
     public boolean participa(Usuario u) {
         return u != null && (u.equals(donoItem) || u.equals(interessado));
     }
+
+    public boolean participaPorId(Long usuarioId) {
+        return usuarioId != null
+                && ((donoItem != null && usuarioId.equals(donoItem.getId()))
+                || (interessado != null && usuarioId.equals(interessado.getId())));
+    }
 }

@@ -6,45 +6,55 @@ O projeto Gradle e os fontes ficam na raiz deste repositório.
 
 ## Estado atual
 
-O projeto está na etapa inicial de modelagem. Há uma aplicação Spring Boot e entidades JPA para usuários, itens, categorias, locais, fotos, reivindicações, conversas, mensagens, mediações, denúncias e devoluções, além dos enums de domínio.
+Esta entrega contém entidades JPA, repositories e services transacionais, além dos DTOs,
+exceções e utilitários necessários para sustentar essas camadas. Os controllers já preparados
+permanecem apenas no ambiente local e estão ignorados pelo Git, pois não fazem parte da entrega atual.
 
-Ainda não há controllers, services, repositories, testes automatizados ou scripts SQL de criação do schema. O `application.properties` configura `spring.jpa.hibernate.ddl-auto=validate`, então o banco e todas as tabelas, tipos e extensões esperados precisam existir antes de iniciar a aplicação. Apesar do comentário no arquivo de configuração, Flyway e migrações ainda não estão configurados.
+O schema PostgreSQL é criado e versionado pelo Flyway, incluindo enums, constraints, índices e
+categorias iniciais.
+
+As regras implementadas abrangem publicação e busca de itens, reivindicações, conversas,
+mensagens, mediações, denúncias, devoluções e expiração automática de publicações.
 
 ## Requisitos
 
 - JDK 17
-- Gradle instalado (este repositório não contém Gradle Wrapper)
 - PostgreSQL local
 
 ## Configuração local
 
-1. Crie o banco `achados_perdidos` no PostgreSQL.
-2. Confira usuário, senha e URL em `src/main/resources/application.properties`. Os valores atuais (`postgres`/`postgres`) são apenas configuração local e não devem ser usados em produção.
-3. Prepare o schema do banco antes de iniciar a aplicação. Este repositório ainda não inclui DDL nem migrações, portanto criar somente o banco não é suficiente para o Hibernate validar o schema.
+1. Crie apenas o banco vazio `achados_perdidos`; o Flyway criará o schema na primeira execução.
+2. Configure `DB_URL`, `DB_USERNAME` e `DB_PASSWORD` quando os valores locais padrão não forem adequados.
+Não mantenha credenciais reais em arquivos versionados.
 
 ## Executar
 
 Execute os comandos na raiz do repositório:
 
 ```sh
-gradle classes
-gradle test
-gradle bootRun
+./gradlew classes
+./gradlew test
+./gradlew bootRun
 ```
 
-No estado atual, `test` não encontra testes do projeto. `bootRun` depende do PostgreSQL estar disponível e do schema já ter sido criado.
+No Windows, use `gradlew.bat` no lugar de `./gradlew`.
+
+`bootRun` depende apenas do PostgreSQL e do banco vazio estarem disponíveis. As migrações são
+executadas automaticamente.
 
 ## Estrutura
 
-- `src/main/java/com/portal/achadosperdidos`: aplicação, entidades e enums
+- `src/main/java/com/portal/achadosperdidos`: entidades, DTOs, repositories, services e configuração
+- `src/main/resources/db/migration`: migrações Flyway
+- `src/test`: testes automatizados das regras de negócio e utilitários
 - `src/main/resources/application.properties`: conexão com PostgreSQL e configurações JPA
 - `build.gradle`: plugins, Java 17 e dependências
 - `settings.gradle`: nome do projeto Gradle
+- `gradlew`, `gradlew.bat` e `gradle/wrapper`: Gradle Wrapper para execução reproduzível
 
 ## Próximas etapas sugeridas
 
-1. Definir o schema PostgreSQL e adicionar migrações versionadas (por exemplo, com Flyway), incluindo enums e extensões exigidos pelas entidades.
-2. Externalizar URL e credenciais do banco para variáveis de ambiente.
-3. Implementar repositories, services e controllers conforme os casos de uso definidos para a aplicação.
-4. Adicionar testes para o mapeamento JPA e para as regras de negócio.
-5. Adicionar o Gradle Wrapper para padronizar a execução sem exigir Gradle instalado globalmente.
+1. Adicionar testes de integração com PostgreSQL para validar as migrações e constraints.
+2. Revisar e versionar os controllers REST e a autenticação, atualmente mantidos apenas no ambiente local.
+3. Publicar uma especificação OpenAPI dos endpoints.
+4. Substituir HTTP Basic por tokens caso o backend seja consumido por SPA ou aplicativo móvel.

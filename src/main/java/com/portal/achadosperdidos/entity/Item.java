@@ -4,7 +4,10 @@ import com.portal.achadosperdidos.enums.*;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
@@ -69,6 +72,7 @@ public class Item extends BaseEntity {
 
     // O mínimo de 1 foto deve ser validado no service.
     @Size(max = 3, message = "Um item pode ter no máximo 3 fotos")
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordem ASC")
     private List<FotoItem> fotos = new ArrayList<>();

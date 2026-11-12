@@ -4,7 +4,8 @@ import com.portal.achadosperdidos.enums.StatusReivindicacao;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
@@ -56,8 +57,11 @@ public class Reivindicacao extends BaseEntity {
         this.dataResposta = LocalDateTime.now();
     }
 
+    /** Pode cancelar uma reivindicação pendente ou já aceita (desistência). */
     public void cancelar() {
-        exigirPendente();
+        if (status != StatusReivindicacao.PENDENTE && status != StatusReivindicacao.ACEITA) {
+            throw new IllegalStateException("Reivindicação não pode ser cancelada: " + status);
+        }
         this.status = StatusReivindicacao.CANCELADA;
         this.dataResposta = LocalDateTime.now();
     }

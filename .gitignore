@@ -30,3 +30,9 @@ build/
 .idea/
 *.iml
 out/
+
+# Fora do escopo da entrega atual (mantidos localmente para a próxima etapa)
+src/main/java/com/portal/achadosperdidos/controller/
+src/main/java/com/portal/achadosperdidos/config/AdminBootstrap.java
+src/main/java/com/portal/achadosperdidos/config/SecurityConfig.java
+src/main/java/com/portal/achadosperdidos/service/UsuarioAtualService.java
