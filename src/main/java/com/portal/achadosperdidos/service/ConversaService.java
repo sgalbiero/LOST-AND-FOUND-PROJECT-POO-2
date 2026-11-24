@@ -5,12 +5,14 @@ import com.portal.achadosperdidos.entity.Conversa;
 import com.portal.achadosperdidos.entity.Item;
 import com.portal.achadosperdidos.entity.Usuario;
 import com.portal.achadosperdidos.enums.StatusItem;
+import com.portal.achadosperdidos.enums.StatusReivindicacao;
 import com.portal.achadosperdidos.exception.AcessoNegadoException;
 import com.portal.achadosperdidos.exception.RecursoNaoEncontradoException;
 import com.portal.achadosperdidos.exception.RegraNegocioException;
 import com.portal.achadosperdidos.repository.ConversaRepository;
 import com.portal.achadosperdidos.repository.ItemRepository;
 import com.portal.achadosperdidos.repository.MensagemRepository;
+import com.portal.achadosperdidos.repository.ReivindicacaoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class ConversaService {
     private final ConversaRepository conversaRepository;
     private final MensagemRepository mensagemRepository;
     private final ItemRepository itemRepository;
+    private final ReivindicacaoRepository reivindicacaoRepository;
     private final AcessoService acesso;
 
     /**
@@ -32,19 +35,28 @@ public class ConversaService {
      * Só é possível iniciar conversa em itens ABERTOS ou EM_NEGOCIACAO.
      */
     @Transactional
-    public ConversaDto.Response iniciar(Long interessadoId, Long itemId) {
-        Usuario interessado = acesso.usuarioAtivo(interessadoId);
+    public ConversaDto.Response iniciar(Long usuarioId, Long itemId) {
+        Usuario usuario = acesso.usuarioAtivo(usuarioId);
         Item item = itemRepository.findDetalhadoById(itemId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Item", itemId));
 
-        if (item.getUsuario().getId().equals(interessadoId)) {
-            throw new RegraNegocioException("Você não pode abrir uma conversa sobre o seu próprio item");
-        }
         if (item.getStatus() != StatusItem.ABERTO && item.getStatus() != StatusItem.EM_NEGOCIACAO) {
             throw new RegraNegocioException("Este item não aceita novas conversas (status: " + item.getStatus() + ")");
         }
 
-        Conversa conversa = conversaRepository.findByItemIdAndInteressadoId(itemId, interessadoId)
+        Usuario interessado;
+        if (item.getUsuario().getId().equals(usuarioId)) {
+            if (item.getStatus() != StatusItem.EM_NEGOCIACAO) {
+                throw new RegraNegocioException("A conversa do proprietário é liberada após aceitar uma reivindicação");
+            }
+            interessado = reivindicacaoRepository.findByItemIdAndStatus(itemId, StatusReivindicacao.ACEITA)
+                    .map(r -> r.getReivindicante())
+                    .orElseThrow(() -> new RegraNegocioException("Não há uma reivindicação aceita para este item"));
+        } else {
+            interessado = usuario;
+        }
+
+        Conversa conversa = conversaRepository.findByItemIdAndInteressadoId(itemId, interessado.getId())
                 .orElseGet(() -> {
                     Conversa c = new Conversa();
                     c.setItem(item);
@@ -53,7 +65,7 @@ public class ConversaService {
                     return conversaRepository.save(c);
                 });
 
-        return ConversaDto.Response.de(conversa, naoLidas(conversa.getId(), interessadoId));
+        return ConversaDto.Response.de(conversa, naoLidas(conversa.getId(), usuarioId));
     }
 
     public List<ConversaDto.Response> listarDoUsuario(Long usuarioId) {

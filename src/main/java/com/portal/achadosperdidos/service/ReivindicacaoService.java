@@ -124,6 +124,13 @@ public class ReivindicacaoService {
         return reivindicacaoRepository.findByReivindicanteId(usuarioId, p).map(ReivindicacaoDto.Response::de);
     }
 
+    public Page<ReivindicacaoDto.Response> listarRecebidas(Long usuarioId, Pageable pageable) {
+        acesso.usuarioAtivo(usuarioId);
+        Pageable p = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 50),
+                Sort.by(Sort.Direction.DESC, "dataCriacao"));
+        return reivindicacaoRepository.findByItemUsuarioId(usuarioId, p).map(ReivindicacaoDto.Response::de);
+    }
+
     // ------------------------------------------------------------------ internos
 
     private Reivindicacao buscarEntidade(Long id) {

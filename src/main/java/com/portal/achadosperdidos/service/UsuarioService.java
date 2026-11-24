@@ -57,7 +57,9 @@ public class UsuarioService {
     @Transactional
     public void desativar(Long solicitanteId, Long alvoId) {
         exigirProprioOuAdmin(solicitanteId, alvoId);
-        buscarEntidade(alvoId).setAtivo(false);
+        Usuario alvo = buscarEntidade(alvoId);
+        impedirRemocaoDoUltimoAdmin(alvo, RoleUsuario.ALUNO);
+        alvo.setAtivo(false);
     }
 
     @Transactional
@@ -67,6 +69,7 @@ public class UsuarioService {
             throw new RegraNegocioException("Você não pode alterar o seu próprio perfil de acesso");
         }
         Usuario alvo = buscarEntidade(alvoId);
+        impedirRemocaoDoUltimoAdmin(alvo, novaRole);
         alvo.setRole(novaRole);
         return UsuarioDto.Detalhe.de(alvo);
     }
@@ -82,5 +85,12 @@ public class UsuarioService {
     private Usuario buscarEntidade(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário", id));
+    }
+
+    private void impedirRemocaoDoUltimoAdmin(Usuario alvo, RoleUsuario novaRole) {
+        if (alvo.isAtivo() && alvo.getRole() == RoleUsuario.ADMIN && novaRole != RoleUsuario.ADMIN
+                && usuarioRepository.countByRoleAndAtivoTrue(RoleUsuario.ADMIN) <= 1) {
+            throw new RegraNegocioException("O sistema precisa manter pelo menos um administrador ativo");
+        }
     }
 }

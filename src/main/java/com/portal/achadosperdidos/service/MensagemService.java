@@ -35,11 +35,11 @@ public class MensagemService {
         return MensagemDto.Response.de(mensagemRepository.save(m));
     }
 
-    /** Histórico em ordem cronológica (mais antigas primeiro). */
+    /** Histórico paginado do mais recente para o mais antigo. */
     public Page<MensagemDto.Response> listar(Long usuarioId, Long conversaId, Pageable pageable) {
         conversaService.carregarComoParticipante(usuarioId, conversaId);
         Pageable p = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 100),
-                Sort.by(Sort.Direction.ASC, "dataEnvio"));
+                Sort.by(Sort.Direction.DESC, "dataEnvio"));
         return mensagemRepository.findByConversaId(conversaId, p).map(MensagemDto.Response::de);
     }
 

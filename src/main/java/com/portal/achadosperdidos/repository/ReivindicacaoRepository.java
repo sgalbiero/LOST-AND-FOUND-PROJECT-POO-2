@@ -29,4 +29,7 @@ public interface ReivindicacaoRepository extends JpaRepository<Reivindicacao, Lo
 
     @EntityGraph(attributePaths = {"item", "reivindicante"})
     Page<Reivindicacao> findByReivindicanteId(Long reivindicanteId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"item", "reivindicante"})
+    Page<Reivindicacao> findByItemUsuarioId(Long usuarioId, Pageable pageable);
 }
