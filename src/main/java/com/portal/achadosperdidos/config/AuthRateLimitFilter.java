@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -23,6 +24,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
     private final AtomicLong requests = new AtomicLong();
 
+    @Autowired
     public AuthRateLimitFilter(@Value("${app.security.auth-rate-limit:20}") int limit) {
         this(limit, Duration.ofMinutes(1).toMillis());
     }
