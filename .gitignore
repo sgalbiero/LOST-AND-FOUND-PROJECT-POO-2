@@ -31,8 +31,16 @@ build/
 *.iml
 out/
 
-# Fora do escopo da entrega atual (mantidos localmente para a próxima etapa)
-src/main/java/com/portal/achadosperdidos/controller/
-src/main/java/com/portal/achadosperdidos/config/AdminBootstrap.java
-src/main/java/com/portal/achadosperdidos/config/SecurityConfig.java
-src/main/java/com/portal/achadosperdidos/service/UsuarioAtualService.java
+# Frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Credenciais e configurações locais
+.env
+.env.*
+!.env.example
+
+# Certificados TLS locais/de produção
+deploy/certs/*.pem
+deploy/certs/*.key
