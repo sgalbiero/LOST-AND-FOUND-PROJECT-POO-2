@@ -48,6 +48,15 @@ public class CicloNegociacaoService {
 
     /** Encerra uma negociação sem entrega e devolve o item ao catálogo quando necessário. */
     public void encerrarSemDevolucao(Item item, Conversa conversa) {
+        encerrarSemDevolucao(item, conversa, true);
+    }
+
+    /** Encerra a negociação pela equipe, preservando a mediação para conclusão e histórico. */
+    public void encerrarPelaEquipeSemDevolucao(Item item, Conversa conversa) {
+        encerrarSemDevolucao(item, conversa, false);
+    }
+
+    private void encerrarSemDevolucao(Item item, Conversa conversa, boolean cancelarMediacoes) {
         reivindicacaoRepository.findByItemIdAndReivindicanteId(item.getId(), conversa.getInteressado().getId())
                 .filter(r -> r.getStatus() == StatusReivindicacao.PENDENTE
                         || r.getStatus() == StatusReivindicacao.ACEITA)
@@ -58,7 +67,10 @@ public class CicloNegociacaoService {
                         item.setStatus(StatusItem.ABERTO);
                     }
                 });
-        encerrarConversa(conversa, MotivoEncerramentoConversa.SEM_DEVOLUCAO);
+        conversa.encerrarPorSistema(MotivoEncerramentoConversa.SEM_DEVOLUCAO);
+        if (cancelarMediacoes) {
+            cancelarMediacoesAbertas(conversa);
+        }
     }
 
     /** Finaliza todos os canais de um item que chegou a um estado terminal. */
@@ -70,6 +82,10 @@ public class CicloNegociacaoService {
 
     private void encerrarConversa(Conversa conversa, MotivoEncerramentoConversa motivo) {
         conversa.encerrarPorSistema(motivo);
+        cancelarMediacoesAbertas(conversa);
+    }
+
+    private void cancelarMediacoesAbertas(Conversa conversa) {
         mediacaoRepository.findAllByConversaIdAndStatusIn(conversa.getId(), MEDIACOES_ABERTAS)
                 .forEach(Mediacao::cancelar);
     }

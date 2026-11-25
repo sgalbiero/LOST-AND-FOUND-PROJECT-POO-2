@@ -1,4 +1,4 @@
-import type { Conversation } from '../domain/Conversation'
+import type { Conversation, Message } from '../domain/Conversation'
 
 export function shouldAutoSelectConversation(input: {
   mobile: boolean
@@ -18,4 +18,8 @@ export function canRequestMediation(conversation: Conversation, supportUser: boo
 
 export function shouldPollConversation(conversation: Conversation) {
   return !conversation.closedAt
+}
+
+export function messageAuthorLabel(message: Message) {
+  return message.fromSupport ? `Equipe · ${message.sender.name}` : message.sender.name
 }

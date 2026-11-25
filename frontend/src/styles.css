@@ -281,8 +281,8 @@ input:focus, select:focus, textarea:focus { border-color: #2b858a; outline: 3px 
 .message-bubble.own time { color: #b9d8d6; }
 .message-bubble.support { color: #173f42; background: #d9eeeb; border: 1px solid #a8d2cd; }
 .message-bubble.support.own { color: white; background: #285f63; border-color: #285f63; }
-.support-author { display: block; margin-bottom: 5px; color: #2b7376; font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
-.message-bubble.support.own .support-author { color: #cce8e5; }
+.message-author { display: block; margin-bottom: 5px; color: #2b7376; font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+.message-bubble.own .message-author { color: #cce8e5; }
 .message-composer { padding: 12px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 9px; background: white; border-top: 1px solid var(--line); }
 .message-composer textarea { min-height: 46px; max-height: 120px; resize: none; }
 .message-composer .button { min-height: 46px; }

@@ -3,6 +3,7 @@ package com.portal.achadosperdidos.service;
 import com.portal.achadosperdidos.dto.ConversaDto;
 import com.portal.achadosperdidos.entity.Conversa;
 import com.portal.achadosperdidos.entity.Item;
+import com.portal.achadosperdidos.entity.Mediacao;
 import com.portal.achadosperdidos.entity.Usuario;
 import com.portal.achadosperdidos.enums.StatusItem;
 import com.portal.achadosperdidos.enums.StatusReivindicacao;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -80,9 +82,15 @@ public class ConversaService {
     public List<ConversaDto.Response> listarDoUsuario(Long usuarioId) {
         Usuario usuario = acesso.usuarioAtivo(usuarioId);
         if (acesso.isAdmin(usuario)) {
-            return mediacaoRepository.findByAdminResponsavelIdAndStatusOrderByDataSolicitacaoDesc(usuarioId, com.portal.achadosperdidos.enums.StatusMediacao.EM_ANDAMENTO).stream()
+            LinkedHashMap<Long, Mediacao> porConversa = new LinkedHashMap<>();
+            mediacaoRepository.findByAdminResponsavelIdOrderByDataSolicitacaoDesc(usuarioId).stream()
                     .filter(m -> m.getConversa() != null)
-                    .map(m -> ConversaDto.Response.de(m.getConversa(), naoLidas(m.getConversa().getId(), usuarioId), m))
+                    .filter(m -> m.getStatus() == com.portal.achadosperdidos.enums.StatusMediacao.EM_ANDAMENTO
+                            || m.getConversa().isEncerrada())
+                    .forEach(m -> porConversa.putIfAbsent(m.getConversa().getId(), m));
+            return porConversa.values().stream()
+                    .map(m -> ConversaDto.Response.de(m.getConversa(),
+                            naoLidas(m.getConversa().getId(), usuarioId), m))
                     .toList();
         }
         return conversaRepository.findDoUsuario(usuarioId).stream()
@@ -110,8 +118,8 @@ public class ConversaService {
         Conversa conversa = buscarConversaParaAtualizar(conversaId);
         if (acesso.isAdmin(usuario)) {
             conversa.encerrarPelaEquipe();
-            cicloNegociacao.encerrarSemDevolucao(item, conversa);
-            return ConversaDto.Response.de(conversa, 0);
+            cicloNegociacao.encerrarPelaEquipeSemDevolucao(item, conversa);
+            return resposta(conversa, usuarioId);
         }
         if (!conversa.participaPorId(usuarioId)) {
             throw new AcessoNegadoException("Você não participa desta conversa");
@@ -172,9 +180,7 @@ public class ConversaService {
         Conversa conversa = conversaRepository.findDetalhadoById(conversaId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
         if (conversa.participaPorId(usuarioId)) return conversa;
-        boolean mediadorResponsavel = acesso.isAdmin(usuario)
-                && mediacaoRepository.existsByConversaIdAndAdminResponsavelIdAndStatus(
-                conversaId, usuarioId, com.portal.achadosperdidos.enums.StatusMediacao.EM_ANDAMENTO);
+        boolean mediadorResponsavel = mediadorPodeAcessar(usuario, conversa);
         if (!mediadorResponsavel) {
             throw new AcessoNegadoException("Você não tem acesso a esta conversa");
         }
@@ -187,9 +193,7 @@ public class ConversaService {
         bloquearItemDaConversa(conversaId);
         Conversa conversa = buscarConversaParaAtualizar(conversaId);
         if (conversa.participaPorId(usuarioId)) return conversa;
-        boolean mediadorResponsavel = acesso.isAdmin(usuario)
-                && mediacaoRepository.existsByConversaIdAndAdminResponsavelIdAndStatus(
-                conversaId, usuarioId, com.portal.achadosperdidos.enums.StatusMediacao.EM_ANDAMENTO);
+        boolean mediadorResponsavel = mediadorPodeAcessar(usuario, conversa);
         if (!mediadorResponsavel) {
             throw new AcessoNegadoException("Você não tem acesso a esta conversa");
         }
@@ -201,11 +205,20 @@ public class ConversaService {
     }
 
     private ConversaDto.Response resposta(Conversa conversa, Long usuarioId) {
-        var mediacao = mediacaoRepository.findFirstByConversaIdAndStatusInOrderByDataSolicitacaoDesc(
-                conversa.getId(), java.util.EnumSet.of(
-                        com.portal.achadosperdidos.enums.StatusMediacao.PENDENTE,
-                        com.portal.achadosperdidos.enums.StatusMediacao.EM_ANDAMENTO)).orElse(null);
+        var mediacao = mediacaoRepository.findFirstByConversaIdOrderByDataSolicitacaoDesc(
+                conversa.getId()).orElse(null);
         return ConversaDto.Response.de(conversa, naoLidas(conversa.getId(), usuarioId), mediacao);
+    }
+
+    private boolean mediadorPodeAcessar(Usuario usuario, Conversa conversa) {
+        if (!acesso.isAdmin(usuario)) return false;
+        if (!conversa.isEncerrada()) {
+            return mediacaoRepository.existsByConversaIdAndAdminResponsavelIdAndStatus(
+                    conversa.getId(), usuario.getId(),
+                    com.portal.achadosperdidos.enums.StatusMediacao.EM_ANDAMENTO);
+        }
+        return mediacaoRepository.existsByConversaIdAndAdminResponsavelId(
+                conversa.getId(), usuario.getId());
     }
 
     private Item bloquearItemDaConversa(Long conversaId) {

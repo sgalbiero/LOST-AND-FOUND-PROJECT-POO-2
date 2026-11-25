@@ -6,7 +6,7 @@ import { useMessageServices } from './MessageServicesContext'
 import { useModeration } from '../../moderation/presentation/ModerationContext'
 import { ConfirmDialog, TextDialog } from '../../../shared/ui/Dialog'
 import { useMediaQuery } from '../../../shared/ui/useMediaQuery'
-import { canRequestMediation, shouldAutoSelectConversation, shouldPollConversation } from './messageFlow'
+import { canRequestMediation, messageAuthorLabel, shouldAutoSelectConversation, shouldPollConversation } from './messageFlow'
 
 export function MessagesPage() {
   const { user } = useAuth()
@@ -178,7 +178,7 @@ export function MessagesPage() {
     <section className="chat-panel" aria-label="Conversa selecionada">
       {!selected && <div className="chat-placeholder"><div aria-hidden="true">···</div><h2>Selecione uma conversa</h2><p>Suas mensagens ficam reunidas aqui.</p></div>}
       {selected && <>
-        <header className="chat-header"><button className="chat-back" type="button" onClick={() => { initialSelectionHandled.current = true; setParams({}) }} aria-label="Voltar para conversas">←</button><div className="chat-header-copy"><strong>{conversationTitle}</strong><span>Sobre <Link to={`/itens/${selected.itemId}`}>{selected.itemTitle}</Link></span></div><div className={`chat-header-actions ${user?.role === 'ADMIN' ? 'admin-chat-actions' : ''}`}>{canRequestMediation(selected, user?.role === 'ADMIN') && <Link className="button button-ghost mediation-action" to={`/mediacoes?conversa=${selected.id}`}>Pedir ajuda à equipe</Link>}{user?.role === 'ADMIN' && selected.closedAt && selected.mediation ? <Link className="button button-primary conversation-close" to="/admin/mediacoes">Concluir mediação</Link> : <button className="button button-ghost conversation-close" type="button" disabled={closing || Boolean(ownRequestedClosure) || Boolean(selected.closedAt)} onClick={() => setClosureOpen(true)}>{selected.closedAt ? 'Conversa encerrada' : user?.role === 'ADMIN' ? 'Encerrar como equipe' : ownRequestedClosure ? `Aguardando ${otherParticipant?.name}` : otherRequestedClosure ? 'Confirmar encerramento' : closing ? 'Confirmando...' : 'Encerrar conversa'}</button>}<Link className="button button-ghost item-action" to={`/itens/${selected.itemId}`}>Ver item</Link></div></header>
+        <header className="chat-header"><button className="chat-back" type="button" onClick={() => { initialSelectionHandled.current = true; setParams({}) }} aria-label="Voltar para conversas">←</button><div className="chat-header-copy"><strong>{conversationTitle}</strong><span>Sobre <Link to={`/itens/${selected.itemId}`}>{selected.itemTitle}</Link></span></div><div className={`chat-header-actions ${user?.role === 'ADMIN' ? 'admin-chat-actions' : ''}`}>{canRequestMediation(selected, user?.role === 'ADMIN') && <Link className="button button-ghost mediation-action" to={`/mediacoes?conversa=${selected.id}`}>Pedir ajuda à equipe</Link>}{user?.role === 'ADMIN' && selected.closedAt && selected.mediation?.status === 'EM_ANDAMENTO' ? <Link className="button button-primary conversation-close" to="/admin/mediacoes">Concluir mediação</Link> : <button className="button button-ghost conversation-close" type="button" disabled={closing || Boolean(ownRequestedClosure) || Boolean(selected.closedAt)} onClick={() => setClosureOpen(true)}>{selected.closedAt ? 'Conversa encerrada' : user?.role === 'ADMIN' ? 'Encerrar como equipe' : ownRequestedClosure ? `Aguardando ${otherParticipant?.name}` : otherRequestedClosure ? 'Confirmar encerramento' : closing ? 'Confirmando...' : 'Encerrar conversa'}</button>}<Link className="button button-ghost item-action" to={`/itens/${selected.itemId}`}>Ver item</Link></div></header>
         <div className="chat-status-stack">
           {error && <div className="chat-error" role="alert">{error}</div>}
           {feedback && <div className="success-banner" role="status">{feedback}</div>}
@@ -192,8 +192,9 @@ export function MessagesPage() {
           {messages.length === 0 && <div className="message-empty"><span aria-hidden="true">👋</span><h2>Comece a conversa</h2><p>Combine os próximos passos com segurança e evite compartilhar dados pessoais.</p></div>}
           {messages.map((message, index) => {
             const own = message.sender.id === user?.id
+            const author = messageAuthorLabel(message)
             const showDay = index === 0 || day(message.sentAt) !== day(messages[index - 1].sentAt)
-            return <div className="message-group" key={message.id}>{showDay && <div className="message-day">{formatDay(message.sentAt)}</div>}<div className={`message-bubble ${own ? 'own' : ''} ${message.fromSupport ? 'support' : ''}`}>{message.fromSupport && <small className="support-author">Mediador · {message.sender.name}</small>}<p>{message.content}</p><time dateTime={message.sentAt}>{formatTime(message.sentAt)}</time>{!own && !message.fromSupport && <button className="message-report" type="button" onClick={() => setReportingMessageId(message.id)}>Denunciar</button>}</div></div>
+            return <div className="message-group" key={message.id}>{showDay && <div className="message-day">{formatDay(message.sentAt)}</div>}<div className={`message-bubble ${own ? 'own' : ''} ${message.fromSupport ? 'support' : ''}`}><small className="message-author">{author}</small><p>{message.content}</p><time dateTime={message.sentAt}>{formatTime(message.sentAt)}</time>{!own && !message.fromSupport && <button className="message-report" type="button" onClick={() => setReportingMessageId(message.id)}>Denunciar</button>}</div></div>
           })}
         </div>
         {selected.closedAt

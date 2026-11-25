@@ -41,7 +41,15 @@ public interface MediacaoRepository extends JpaRepository<Mediacao, Long> {
             Long conversaId, Collection<StatusMediacao> status);
 
     @EntityGraph(attributePaths = {"item", "conversa", "conversa.donoItem", "conversa.interessado", "solicitante", "adminResponsavel"})
+    Optional<Mediacao> findFirstByConversaIdOrderByDataSolicitacaoDesc(Long conversaId);
+
+    @EntityGraph(attributePaths = {"item", "conversa", "conversa.donoItem", "conversa.interessado", "solicitante", "adminResponsavel"})
     List<Mediacao> findByAdminResponsavelIdAndStatusOrderByDataSolicitacaoDesc(Long adminId, StatusMediacao status);
 
+    @EntityGraph(attributePaths = {"item", "conversa", "conversa.donoItem", "conversa.interessado", "solicitante", "adminResponsavel"})
+    List<Mediacao> findByAdminResponsavelIdOrderByDataSolicitacaoDesc(Long adminId);
+
     boolean existsByConversaIdAndAdminResponsavelIdAndStatus(Long conversaId, Long adminId, StatusMediacao status);
+
+    boolean existsByConversaIdAndAdminResponsavelId(Long conversaId, Long adminId);
 }

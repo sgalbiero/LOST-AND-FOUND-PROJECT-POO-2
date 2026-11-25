@@ -2,9 +2,11 @@ package com.portal.achadosperdidos.service;
 
 import com.portal.achadosperdidos.entity.Conversa;
 import com.portal.achadosperdidos.entity.Item;
+import com.portal.achadosperdidos.entity.Mediacao;
 import com.portal.achadosperdidos.entity.Reivindicacao;
 import com.portal.achadosperdidos.entity.Usuario;
 import com.portal.achadosperdidos.enums.StatusItem;
+import com.portal.achadosperdidos.enums.StatusMediacao;
 import com.portal.achadosperdidos.exception.RegraNegocioException;
 import com.portal.achadosperdidos.repository.ConversaRepository;
 import com.portal.achadosperdidos.repository.ItemRepository;
@@ -18,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,16 +83,68 @@ class ConversaServiceTest {
         Usuario admin = usuario(3L);
         Item item = item(10L, dono, StatusItem.EM_NEGOCIACAO);
         Conversa conversa = conversa(30L, item, dono, interessado);
+        Mediacao mediacao = new Mediacao();
+        mediacao.setConversa(conversa);
+        mediacao.setAdminResponsavel(admin);
+        mediacao.setStatus(StatusMediacao.EM_ANDAMENTO);
         when(acesso.usuarioAtivo(3L)).thenReturn(admin);
         when(acesso.isAdmin(admin)).thenReturn(true);
         when(conversas.findItemIdById(30L)).thenReturn(Optional.of(10L));
         when(conversas.findDetalhadoParaAtualizarById(30L)).thenReturn(Optional.of(conversa));
         when(itens.findByIdParaAtualizar(10L)).thenReturn(Optional.of(item));
-        service.solicitarEncerramento(3L, 30L);
+        when(mediacoes.findFirstByConversaIdOrderByDataSolicitacaoDesc(30L))
+                .thenReturn(Optional.of(mediacao));
+
+        var resultado = service.solicitarEncerramento(3L, 30L);
 
         assertThat(conversa.isEncerrada()).isTrue();
         assertThat(conversa.isEncerradaPelaEquipe()).isTrue();
-        verify(cicloNegociacao).encerrarSemDevolucao(item, conversa);
+        assertThat(resultado.mediacao().status()).isEqualTo(StatusMediacao.EM_ANDAMENTO);
+        verify(cicloNegociacao).encerrarPelaEquipeSemDevolucao(item, conversa);
+    }
+
+    @Test
+    void listaConversaEncerradaComoHistoricoDoMediadorResponsavel() {
+        Usuario dono = usuario(1L);
+        Usuario interessado = usuario(2L);
+        Usuario admin = usuario(3L);
+        Item item = item(10L, dono, StatusItem.ABERTO);
+        Conversa conversa = conversa(30L, item, dono, interessado);
+        conversa.encerrarPelaEquipe();
+        Mediacao mediacao = new Mediacao();
+        mediacao.setConversa(conversa);
+        mediacao.setAdminResponsavel(admin);
+        mediacao.setStatus(StatusMediacao.RESOLVIDO);
+        when(acesso.usuarioAtivo(3L)).thenReturn(admin);
+        when(acesso.isAdmin(admin)).thenReturn(true);
+        when(mediacoes.findByAdminResponsavelIdOrderByDataSolicitacaoDesc(3L))
+                .thenReturn(List.of(mediacao));
+
+        var resultado = service.listarDoUsuario(3L);
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).id()).isEqualTo(30L);
+        assertThat(resultado.get(0).dataEncerramento()).isNotNull();
+        assertThat(resultado.get(0).mediacao().status()).isEqualTo(StatusMediacao.RESOLVIDO);
+    }
+
+    @Test
+    void permiteAoMediadorResponsavelLerConversaEncerrada() {
+        Usuario dono = usuario(1L);
+        Usuario interessado = usuario(2L);
+        Usuario admin = usuario(3L);
+        Item item = item(10L, dono, StatusItem.ABERTO);
+        Conversa conversa = conversa(30L, item, dono, interessado);
+        conversa.encerrarPelaEquipe();
+        when(acesso.usuarioAtivo(3L)).thenReturn(admin);
+        when(acesso.isAdmin(admin)).thenReturn(true);
+        when(conversas.findDetalhadoById(30L)).thenReturn(Optional.of(conversa));
+        when(mediacoes.existsByConversaIdAndAdminResponsavelId(30L, 3L)).thenReturn(true);
+
+        var resultado = service.buscar(3L, 30L);
+
+        assertThat(resultado.id()).isEqualTo(30L);
+        assertThat(resultado.dataEncerramento()).isNotNull();
     }
 
     private static Usuario usuario(Long id) {

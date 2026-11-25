@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Conversation } from '../domain/Conversation'
-import { canRequestMediation, shouldAutoSelectConversation, shouldPollConversation } from './messageFlow'
+import type { Conversation, Message } from '../domain/Conversation'
+import { canRequestMediation, messageAuthorLabel, shouldAutoSelectConversation, shouldPollConversation } from './messageFlow'
 
 const conversation: Conversation = {
   id: 1,
@@ -30,4 +30,22 @@ describe('fluxo da tela de mensagens', () => {
     expect(canRequestMediation(closed, false)).toBe(false)
     expect(shouldPollConversation(closed)).toBe(false)
   })
+
+  it('identifica o remetente de todas as mensagens para qualquer usuário', () => {
+    expect(messageAuthorLabel(message({ id: 1, name: 'Ana' }))).toBe('Ana')
+    expect(messageAuthorLabel(message({ id: 2, name: 'Bia' }))).toBe('Bia')
+    expect(messageAuthorLabel(message({ id: 3, name: 'Carlos' }, true))).toBe('Equipe · Carlos')
+  })
 })
+
+function message(sender: Message['sender'], fromSupport = false): Message {
+  return {
+    id: sender.id,
+    conversationId: 1,
+    sender,
+    content: 'Mensagem',
+    sentAt: '2026-11-24T10:00:00',
+    read: false,
+    fromSupport,
+  }
+}

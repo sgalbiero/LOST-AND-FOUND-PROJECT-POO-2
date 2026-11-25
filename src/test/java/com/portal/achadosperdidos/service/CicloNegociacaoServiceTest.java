@@ -25,6 +25,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,6 +71,23 @@ class CicloNegociacaoServiceTest {
         assertThat(aceita.getStatus()).isEqualTo(StatusReivindicacao.CANCELADA);
         assertThat(item.getStatus()).isEqualTo(StatusItem.ABERTO);
         assertThat(conversa.getMotivoEncerramento()).isEqualTo(MotivoEncerramentoConversa.SEM_DEVOLUCAO);
+    }
+
+    @Test
+    void encerramentoPelaEquipePreservaMediacaoParaHistorico() {
+        Usuario dono = usuario(1L);
+        Usuario interessado = usuario(2L);
+        Item item = item(10L, dono, StatusItem.EM_NEGOCIACAO);
+        Reivindicacao aceita = reivindicacao(20L, item, interessado, true);
+        Conversa conversa = conversa(30L, item, dono, interessado);
+        when(reivindicacoes.findByItemIdAndReivindicanteId(10L, 2L)).thenReturn(Optional.of(aceita));
+
+        service.encerrarPelaEquipeSemDevolucao(item, conversa);
+
+        assertThat(aceita.getStatus()).isEqualTo(StatusReivindicacao.CANCELADA);
+        assertThat(item.getStatus()).isEqualTo(StatusItem.ABERTO);
+        assertThat(conversa.getMotivoEncerramento()).isEqualTo(MotivoEncerramentoConversa.SEM_DEVOLUCAO);
+        verifyNoInteractions(mediacoes);
     }
 
     private static Usuario usuario(Long id) {
