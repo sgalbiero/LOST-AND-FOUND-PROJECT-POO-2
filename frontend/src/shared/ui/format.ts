@@ -1,6 +1,7 @@
 export function formatDate(value: string) {
+  const date = value.slice(0, 10)
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' })
-    .format(new Date(`${value}T12:00:00Z`))
+    .format(new Date(`${date}T12:00:00Z`))
 }
 
 export function initials(name: string) {
