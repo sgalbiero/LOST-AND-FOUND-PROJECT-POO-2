@@ -4,6 +4,7 @@ import type { ProfileUpdate, Registration, User } from '../domain/User'
 
 interface AuthContextValue {
   user: User | null
+  initializing: boolean
   signIn(email: string, password: string): Promise<void>
   register(registration: Registration): Promise<void>
   updateProfile(profile: ProfileUpdate): Promise<void>
@@ -15,17 +16,24 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ service, children }: { service: AuthService; children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [initializing, setInitializing] = useState(true)
 
-  useEffect(() => service.onSessionExpired(() => setUser(null)), [service])
+  useEffect(() => {
+    let active = true
+    void service.restore().then(restored => { if (active) setUser(restored) }).finally(() => { if (active) setInitializing(false) })
+    const unsubscribe = service.onSessionExpired(() => setUser(null))
+    return () => { active = false; unsubscribe() }
+  }, [service])
 
   const value = useMemo<AuthContextValue>(() => ({
     user,
+    initializing,
     async signIn(email, password) { setUser(await service.signIn(email, password)) },
     async register(registration) { setUser(await service.register(registration)) },
     async updateProfile(profile) { setUser(await service.updateProfile(profile)) },
     async deactivate() { if (user) { await service.deactivate(user.id); setUser(null) } },
     signOut() { service.signOut(); setUser(null) },
-  }), [service, user])
+  }), [initializing, service, user])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

@@ -23,6 +23,10 @@ export class HttpAuthGateway implements AuthGateway {
     return { user: mapUser(dto), authorization }
   }
 
+  async restore(): Promise<User> {
+    return mapUser(await this.http.request<UserDto>('/api/usuarios/me'))
+  }
+
   async register(registration: Registration): Promise<void> {
     await this.http.request<UserDto>('/api/usuarios', {
       method: 'POST',

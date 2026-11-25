@@ -28,17 +28,41 @@ describe('AuthService', () => {
 
     expect(credentials.value).toBeNull()
   })
+
+  it('restaura o usuário quando a página é recarregada com uma credencial', async () => {
+    const credentials = new FakeCredentialStore()
+    credentials.setAuthorization('Basic token')
+    const service = new AuthService(new FakeAuthGateway(), credentials)
+
+    await expect(service.restore()).resolves.toEqual(session.user)
+    expect(credentials.value).toBe('Basic token')
+  })
+
+  it('limpa uma credencial expirada ao restaurar a sessão', async () => {
+    const credentials = new FakeCredentialStore()
+    credentials.setAuthorization('Basic token')
+    const service = new AuthService(new FailingRestoreGateway(), credentials)
+
+    await expect(service.restore()).resolves.toBeNull()
+    expect(credentials.value).toBeNull()
+  })
 })
 
 class FakeCredentialStore implements CredentialStore {
   value: string | null = null
   setAuthorization(value: string | null) { this.value = value }
+  getAuthorization() { return this.value }
   subscribe(_listener: () => void) { return () => undefined }
 }
 
 class FakeAuthGateway implements AuthGateway {
   authenticate(): Promise<AuthenticatedSession> { return Promise.resolve(session) }
+  restore(): Promise<User> { return Promise.resolve(session.user) }
   register(_registration: Registration): Promise<void> { return Promise.resolve() }
   updateProfile(_profile: ProfileUpdate): Promise<User> { return Promise.resolve(session.user) }
   deactivate(_userId: number): Promise<void> { return Promise.resolve() }
+}
+
+class FailingRestoreGateway extends FakeAuthGateway {
+  override restore(): Promise<User> { return Promise.reject(new Error('Sessão expirada')) }
 }

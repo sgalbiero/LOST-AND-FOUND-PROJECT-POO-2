@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Field } from '../../../shared/ui/Field'
 import { formatDate } from '../../../shared/ui/format'
 import { useAuth } from './AuthContext'
+import { ConfirmDialog } from '../../../shared/ui/Dialog'
 
 export function ProfilePage() {
   const { user, updateProfile, deactivate } = useAuth()
@@ -10,6 +11,7 @@ export function ProfilePage() {
   const [error, setError] = useState('')
   const [feedback, setFeedback] = useState('')
   const [busy, setBusy] = useState(false)
+  const [deactivateOpen, setDeactivateOpen] = useState(false)
   if (!user) return null
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -24,7 +26,6 @@ export function ProfilePage() {
   }
 
   async function removeAccount() {
-    if (!confirm('Desativar sua conta? Você perderá o acesso até que a equipe de apoio a reative.')) return
     setBusy(true); setError('')
     try { await deactivate(); navigate('/', { replace: true }) }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível desativar a conta.'); setBusy(false) }
@@ -36,12 +37,13 @@ export function ProfilePage() {
       <form className="form item-form" onSubmit={submit}>
         {feedback && <div className="success-banner" role="status">{feedback}</div>}
         {error && <div className="form-error" role="alert">{error}</div>}
-        <Field label="Nome completo" name="nome" defaultValue={user.name} maxLength={255} required />
-        <Field label="E-mail" name="email" value={user.email} readOnly />
-        <Field label="Telefone (opcional)" name="telefone" defaultValue={user.phone} maxLength={50} />
+        <Field label="Nome completo" name="nome" autoComplete="name" defaultValue={user.name} maxLength={255} required />
+        <Field label="E-mail" name="email" type="email" autoComplete="email" value={user.email} readOnly />
+        <Field label="Telefone (opcional)" name="telefone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={user.phone} maxLength={50} />
         <div className="form-actions"><button className="button button-primary" disabled={busy}>{busy ? 'Salvando...' : 'Salvar perfil'}</button></div>
       </form>
-      <aside className="profile-summary"><h2>Informações da conta</h2><dl><div><dt>Perfil</dt><dd>{user.role === 'ADMIN' ? 'Equipe de apoio' : 'Aluno'}</dd></div><div><dt>Cadastro</dt><dd>{formatDate(user.registeredAt)}</dd></div><div><dt>Status</dt><dd>{user.active ? 'Ativa' : 'Desativada'}</dd></div></dl><hr /><h3>Desativar conta</h3><p>Suas publicações e conversas serão preservadas para manter o histórico.</p><button className="button button-secondary" disabled={busy} onClick={removeAccount}>Desativar minha conta</button></aside>
+      <aside className="profile-summary"><h2>Informações da conta</h2><dl><div><dt>Perfil</dt><dd>{user.role === 'ADMIN' ? 'Equipe de apoio' : 'Aluno'}</dd></div><div><dt>Cadastro</dt><dd>{formatDate(user.registeredAt)}</dd></div><div><dt>Status</dt><dd>{user.active ? 'Ativa' : 'Desativada'}</dd></div></dl><hr /><h3>Desativar conta</h3><p>Suas publicações e conversas serão preservadas. Para recuperar o acesso, solicite a reativação à equipe de apoio.</p><button className="button button-secondary" disabled={busy} onClick={() => setDeactivateOpen(true)}>Desativar minha conta</button></aside>
     </div>
+    {deactivateOpen && <ConfirmDialog title="Desativar sua conta?" description="Você perderá o acesso, mas publicações e conversas serão preservadas. A equipe de apoio poderá reativar a conta." confirmLabel="Desativar conta" danger busy={busy} onClose={() => setDeactivateOpen(false)} onConfirm={removeAccount} />}
   </div>
 }

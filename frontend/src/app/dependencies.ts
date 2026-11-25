@@ -13,9 +13,9 @@ import { HttpReturnGateway } from '../features/returns/infrastructure/HttpReturn
 import { ModerationService } from '../features/moderation/application/ModerationService'
 import { HttpModerationGateway } from '../features/moderation/infrastructure/HttpModerationGateway'
 import { FetchHttpClient } from '../shared/http/FetchHttpClient'
-import { MemoryCredentialStore } from '../shared/session/MemoryCredentialStore'
+import { SessionCredentialStore } from '../shared/session/SessionCredentialStore'
 
-const credentials = new MemoryCredentialStore()
+const credentials = new SessionCredentialStore()
 const http = new FetchHttpClient(import.meta.env.VITE_API_BASE_URL ?? '', credentials)
 
 export const services = Object.freeze({
