@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import type { Page } from '../../../shared/domain/Page'
 import { StateView } from '../../../shared/ui/StateView'
 import type { CatalogOption } from '../../catalog/domain/CatalogOption'
@@ -10,6 +10,7 @@ import { RecoveryJourney } from './RecoveryJourney'
 
 export function ExplorePage() {
   const { items: itemService, catalog } = useItemServices()
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const [page, setPage] = useState<Page<ItemSummary> | null>(null)
   const [items, setItems] = useState<ItemSummary[]>([])
@@ -18,8 +19,10 @@ export function ExplorePage() {
   const [searchTerm, setSearchTerm] = useState(params.get('termo') || '')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [reload, setReload] = useState(0)
   const pageNumber = Number(params.get('page') || 0)
   const queryKey = params.toString()
+  const termParam = params.get('termo') || ''
   const activeFilterCount = ['termo', 'tipo', 'categoriaId', 'localId']
     .filter(name => params.has(name)).length
 
@@ -45,7 +48,9 @@ export function ExplorePage() {
       })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
-  }, [itemService, queryKey, pageNumber])
+  }, [itemService, queryKey, pageNumber, reload])
+
+  useEffect(() => setSearchTerm(termParam), [termParam])
 
   function change(name: string, value: string) {
     const next = new URLSearchParams(params)
@@ -121,9 +126,11 @@ export function ExplorePage() {
           <div><span className="eyebrow">Publicações recentes</span><h2 id="explore-title">Itens da comunidade</h2></div>
           <div className="catalog-summary" aria-live="polite">{page && <strong>{page.totalElements} {page.totalElements === 1 ? 'resultado' : 'resultados'}</strong>}<span>Mais recentes primeiro</span></div>
         </div>
-        {error && <StateView message={error} action="Tentar novamente" onAction={() => setParams(new URLSearchParams(params))} />}
+        {error && <StateView message={error} action="Tentar novamente" onAction={() => setReload(value => value + 1)} />}
         {!error && loading && items.length === 0 && <div className="item-grid">{Array.from({ length: 8 }).map((_, index) => <div className="skeleton card-skeleton" key={index} />)}</div>}
-        {!error && !loading && items.length === 0 && <StateView message="Nenhum item combina com esses filtros." action="Limpar filtros" onAction={clearFilters} />}
+        {!error && !loading && items.length === 0 && (activeFilterCount > 0
+          ? <StateView message="Nenhum item combina com esses filtros." action="Limpar filtros" onAction={clearFilters} />
+          : <StateView message="Ainda não há itens publicados. Que tal criar o primeiro aviso?" action="Publicar um item" onAction={() => navigate('/itens/novo')} />)}
         <div className="item-grid">{items.map(item => <ItemCard item={item} key={item.id} />)}</div>
         {page && !page.last && <div className="load-more"><button className="button button-secondary" disabled={loading} onClick={() => { const next = new URLSearchParams(params); next.set('page', String(pageNumber + 1)); setParams(next) }}>{loading ? 'Carregando...' : 'Carregar mais'}</button></div>}
       </section>

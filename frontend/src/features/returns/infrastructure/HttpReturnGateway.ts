@@ -2,7 +2,7 @@ import type { HttpClient } from '../../../shared/http/HttpClient'
 import type { ReturnGateway } from '../application/ReturnGateway'
 import type { ReturnRecord } from '../domain/ReturnRecord'
 
-interface ReturnDto { id: number; itemId: number; reivindicacaoId: number; confirmadoPor: { id: number; nome: string }; dataDevolucao: string; observacao?: string }
+interface ReturnDto { id: number; itemId: number; reivindicacaoId: number; recebedor: { id: number; nome: string }; confirmadoPor: { id: number; nome: string }; dataDevolucao: string; observacao?: string }
 
 export class HttpReturnGateway implements ReturnGateway {
   constructor(private readonly http: HttpClient) {}
@@ -15,5 +15,5 @@ export class HttpReturnGateway implements ReturnGateway {
 }
 
 function mapReturn(dto: ReturnDto): ReturnRecord {
-  return { id: dto.id, itemId: dto.itemId, claimId: dto.reivindicacaoId, confirmedBy: { id: dto.confirmadoPor.id, name: dto.confirmadoPor.nome }, returnedAt: dto.dataDevolucao, note: dto.observacao }
+  return { id: dto.id, itemId: dto.itemId, claimId: dto.reivindicacaoId, recipient: { id: dto.recebedor.id, name: dto.recebedor.nome }, confirmedBy: { id: dto.confirmadoPor.id, name: dto.confirmadoPor.nome }, returnedAt: dto.dataDevolucao, note: dto.observacao }
 }

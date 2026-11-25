@@ -79,8 +79,8 @@ export function ReturnPage() {
         <div><span className={`status status-${item.status.toLowerCase()}`}>{item.status === 'DEVOLVIDO' ? 'Devolvido' : 'Em negociação'}</span><h2>{item.title}</h2><p>{item.category} · {item.location}</p></div>
       </aside>
 
-      <main className="return-content">
-        {record ? <Receipt record={record} item={item} recipientName={acceptedClaim?.claimant.name ?? user?.name} conversationId={conversationId} /> : <>
+      <section className="return-content">
+        {record ? <Receipt record={record} item={item} conversationId={conversationId} /> : <>
           <span className="eyebrow">Etapa final</span><h1>Confirmar devolução</h1><p className="return-lead">Registre somente depois que o item tiver sido entregue. Esta ação encerra a publicação e não poderá ser desfeita.</p>
           {error && <div className="form-error" role="alert">{error}</div>}
           <section className="return-recipient"><span>Entrega combinada com</span><strong>{acceptedClaim?.claimant.name ?? 'Reivindicante aceito'}</strong><small>Reivindicação #{acceptedClaim?.id ?? 'aceita'}</small></section>
@@ -90,15 +90,15 @@ export function ReturnPage() {
             <div className="return-actions">{conversationId && <Link className="button button-secondary" to={`/mensagens?conversa=${conversationId}`}>Voltar à conversa</Link>}<button className="button button-primary" disabled={submitting}>{submitting ? 'Registrando...' : 'Registrar devolução'}</button></div>
           </form>
         </>}
-      </main>
+      </section>
     </div>
   </div>
 }
 
-function Receipt({ record, item, recipientName, conversationId }: { record: ReturnRecord; item: ItemDetails; recipientName?: string; conversationId: number | null }) {
+function Receipt({ record, item, conversationId }: { record: ReturnRecord; item: ItemDetails; conversationId: number | null }) {
   return <div className="return-receipt">
     <div className="receipt-icon" aria-hidden="true">✓</div><span className="eyebrow">Devolução concluída</span><h1>Item devolvido com sucesso</h1><p>Este registro permanece disponível para as pessoas envolvidas.</p>
-    <dl><div><dt>Item</dt><dd>{item.title}</dd></div><div><dt>Recebedor</dt><dd>{recipientName ?? `Reivindicação #${record.claimId}`}</dd></div><div><dt>Confirmado por</dt><dd>{record.confirmedBy.name}</dd></div><div><dt>Data da devolução</dt><dd>{formatDateTime(record.returnedAt)}</dd></div>{record.note && <div className="receipt-note"><dt>Observação</dt><dd>{record.note}</dd></div>}</dl>
+    <dl><div><dt>Item</dt><dd>{item.title}</dd></div><div><dt>Recebedor</dt><dd>{record.recipient.name}</dd></div><div><dt>Confirmado por</dt><dd>{record.confirmedBy.name}</dd></div><div><dt>Data da devolução</dt><dd>{formatDateTime(record.returnedAt)}</dd></div>{record.note && <div className="receipt-note"><dt>Observação</dt><dd>{record.note}</dd></div>}</dl>
     <div className="return-actions"><Link className="button button-secondary" to={`/itens/${item.id}`}>Ver item</Link>{conversationId && <Link className="button button-primary" to={`/mensagens?conversa=${conversationId}`}>Abrir histórico da conversa</Link>}</div>
   </div>
 }

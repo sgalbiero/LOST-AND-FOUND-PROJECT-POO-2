@@ -24,4 +24,4 @@ class FakeReturnGateway implements ReturnGateway {
   findByItem(): Promise<ReturnRecord> { throw new Error('not needed') }
 }
 
-const record: ReturnRecord = { id: 1, itemId: 1, claimId: 1, confirmedBy: { id: 1, name: 'Julio' }, returnedAt: '2026-11-23T12:00:00' }
+const record: ReturnRecord = { id: 1, itemId: 1, claimId: 1, recipient: { id: 2, name: 'Ana' }, confirmedBy: { id: 1, name: 'Julio' }, returnedAt: '2026-11-23T12:00:00' }
