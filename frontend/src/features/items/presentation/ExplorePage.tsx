@@ -6,6 +6,7 @@ import type { CatalogOption } from '../../catalog/domain/CatalogOption'
 import type { ItemFilters, ItemSummary, ItemType } from '../domain/Item'
 import { ItemCard } from './ItemCard'
 import { useItemServices } from './ItemServicesContext'
+import { RecoveryJourney } from './RecoveryJourney'
 
 export function ExplorePage() {
   const { items: itemService, catalog } = useItemServices()
@@ -78,12 +79,20 @@ export function ExplorePage() {
     <>
       <section className="catalog-hero">
         <div className="catalog-hero-content">
-          <div>
+          <div className="catalog-hero-copy">
             <span className="eyebrow">Achados e perdidos da comunidade</span>
-            <h1>Encontre o que importa.</h1>
-            <p>Pesquise publicações recentes ou ajude um item a voltar para casa.</p>
+            <h1>Perdeu ou encontrou algo?</h1>
+            <p>Comece pela ação certa. Você publica em poucos minutos e acompanha tudo por aqui.</p>
+            <div className="hero-choice" aria-label="Escolha o que aconteceu">
+              <Link className="button hero-choice-primary" to="/itens/novo?tipo=PERDIDO">Perdi um item</Link>
+              <Link className="button hero-choice-secondary" to="/itens/novo?tipo=ENCONTRADO">Encontrei um item</Link>
+            </div>
           </div>
-          <Link className="button button-primary catalog-hero-action" to="/itens/novo">Publicar um item</Link>
+          <div className="hero-assurance" aria-label="Orientações rápidas">
+            <strong>Um fluxo simples e seguro</strong>
+            <span>Seus dados de contato não aparecem nas publicações.</span>
+            <a href="#explore-title">Ver publicações</a>
+          </div>
         </div>
       </section>
       <section className="catalog-section" aria-labelledby="explore-title">
@@ -107,6 +116,7 @@ export function ExplorePage() {
           </div>
           {activeFilters.length > 0 && <div className="active-filters" aria-label="Filtros ativos">{activeFilters.map(filter => <button type="button" key={filter.key} onClick={() => { if (filter.key === 'termo') setSearchTerm(''); change(filter.key, '') }}>{filter.label}<span aria-hidden="true">×</span></button>)}</div>}
         </div>
+        <RecoveryJourney />
         <div className="catalog-toolbar">
           <div><span className="eyebrow">Publicações recentes</span><h2 id="explore-title">Itens da comunidade</h2></div>
           <div className="catalog-summary" aria-live="polite">{page && <strong>{page.totalElements} {page.totalElements === 1 ? 'resultado' : 'resultados'}</strong>}<span>Mais recentes primeiro</span></div>
