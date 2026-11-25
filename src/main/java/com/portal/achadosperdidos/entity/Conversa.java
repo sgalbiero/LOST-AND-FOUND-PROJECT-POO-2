@@ -1,8 +1,11 @@
 package com.portal.achadosperdidos.entity;
 
+import com.portal.achadosperdidos.enums.MotivoEncerramentoConversa;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,6 +35,10 @@ public class Conversa extends BaseEntity {
     @Column(name = "data_criacao", nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
 
+    @CreationTimestamp
+    @Column(name = "ultima_atividade", nullable = false)
+    private LocalDateTime ultimaAtividade;
+
     @Column(name = "encerramento_dono_solicitado", nullable = false)
     private boolean encerramentoDonoSolicitado;
 
@@ -43,6 +50,11 @@ public class Conversa extends BaseEntity {
 
     @Column(name = "encerrada_pela_equipe", nullable = false)
     private boolean encerradaPelaEquipe;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "motivo_encerramento", columnDefinition = "motivo_encerramento_conversa")
+    private MotivoEncerramentoConversa motivoEncerramento;
 
     @OneToMany(mappedBy = "conversa", cascade = CascadeType.REMOVE)
     @OrderBy("dataEnvio ASC")
@@ -75,8 +87,10 @@ public class Conversa extends BaseEntity {
         } else {
             encerramentoInteressadoSolicitado = true;
         }
+        ultimaAtividade = LocalDateTime.now();
         if (encerramentoDonoSolicitado && encerramentoInteressadoSolicitado && dataEncerramento == null) {
-            dataEncerramento = LocalDateTime.now();
+            dataEncerramento = ultimaAtividade;
+            motivoEncerramento = MotivoEncerramentoConversa.SEM_DEVOLUCAO;
         }
     }
 
@@ -84,10 +98,22 @@ public class Conversa extends BaseEntity {
         return dataEncerramento != null;
     }
 
+    public void registrarAtividade() {
+        ultimaAtividade = LocalDateTime.now();
+    }
+
     public void encerrarPelaEquipe() {
         encerradaPelaEquipe = true;
+        encerrarPorSistema(MotivoEncerramentoConversa.SEM_DEVOLUCAO);
+    }
+
+    public void encerrarPorSistema(MotivoEncerramentoConversa motivo) {
         if (dataEncerramento == null) {
             dataEncerramento = LocalDateTime.now();
+            ultimaAtividade = dataEncerramento;
+            motivoEncerramento = motivo;
+        } else if (motivoEncerramento == null) {
+            motivoEncerramento = motivo;
         }
     }
 }

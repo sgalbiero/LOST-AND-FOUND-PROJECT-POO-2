@@ -26,6 +26,7 @@ class ReivindicacaoServiceTest {
     @Mock ReivindicacaoRepository reivindicacoes;
     @Mock ItemRepository itens;
     @Mock AcessoService acesso;
+    @Mock CicloNegociacaoService cicloNegociacao;
     @InjectMocks ReivindicacaoService service;
 
     @Test
@@ -35,7 +36,7 @@ class ReivindicacaoServiceTest {
         Item item = item(10L, dono, StatusItem.ABERTO);
 
         when(acesso.usuarioAtivo(2L)).thenReturn(interessado);
-        when(itens.findById(10L)).thenReturn(Optional.of(item));
+        when(itens.findByIdParaAtualizar(10L)).thenReturn(Optional.of(item));
         when(reivindicacoes.existsByItemIdAndReivindicanteId(10L, 2L)).thenReturn(false);
         when(reivindicacoes.save(any())).thenAnswer(invocacao -> {
             Reivindicacao r = invocacao.getArgument(0);

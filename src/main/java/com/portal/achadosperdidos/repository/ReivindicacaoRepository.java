@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,9 +21,13 @@ public interface ReivindicacaoRepository extends JpaRepository<Reivindicacao, Lo
 
     boolean existsByItemIdAndReivindicanteId(Long itemId, Long reivindicanteId);
 
+    Optional<Reivindicacao> findByItemIdAndReivindicanteId(Long itemId, Long reivindicanteId);
+
     Optional<Reivindicacao> findByItemIdAndStatus(Long itemId, StatusReivindicacao status);
 
     List<Reivindicacao> findAllByItemIdAndStatus(Long itemId, StatusReivindicacao status);
+
+    List<Reivindicacao> findAllByItemIdAndStatusIn(Long itemId, Collection<StatusReivindicacao> status);
 
     @EntityGraph(attributePaths = {"item", "reivindicante"})
     List<Reivindicacao> findByItemIdOrderByDataCriacaoAsc(Long itemId);

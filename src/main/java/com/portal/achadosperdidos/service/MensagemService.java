@@ -5,7 +5,6 @@ import com.portal.achadosperdidos.entity.Conversa;
 import com.portal.achadosperdidos.entity.Mensagem;
 import com.portal.achadosperdidos.entity.Usuario;
 import com.portal.achadosperdidos.repository.MensagemRepository;
-import com.portal.achadosperdidos.exception.RegraNegocioException;
 import com.portal.achadosperdidos.util.TextoUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,16 +25,15 @@ public class MensagemService {
 
     @Transactional
     public MensagemDto.Response enviar(Long usuarioId, Long conversaId, MensagemDto.Enviar req) {
-        Conversa conversa = conversaService.carregarComAcessoMensagens(usuarioId, conversaId);
-        if (conversa.isEncerrada()) {
-            throw new RegraNegocioException("Esta conversa já foi encerrada pelos participantes");
-        }
+        Conversa conversa = conversaService.carregarComAcessoMensagensParaAtualizar(usuarioId, conversaId);
+        conversaService.exigirVinculoAtivo(conversa);
         Usuario remetente = acesso.usuarioAtivo(usuarioId);
 
         Mensagem m = new Mensagem();
         m.setConversa(conversa);
         m.setRemetente(remetente);
         m.setConteudo(TextoUtil.exigirTexto(req.conteudo(), "conteudo"));
+        conversa.registrarAtividade();
         return MensagemDto.Response.de(mensagemRepository.save(m));
     }
 

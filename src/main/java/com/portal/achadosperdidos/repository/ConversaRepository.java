@@ -12,7 +12,12 @@ import jakarta.persistence.LockModeType;
 
 public interface ConversaRepository extends JpaRepository<Conversa, Long> {
 
+    @Query("select c.item.id from Conversa c where c.id = :id")
+    Optional<Long> findItemIdById(@Param("id") Long id);
+
     Optional<Conversa> findByItemIdAndInteressadoId(Long itemId, Long interessadoId);
+
+    List<Conversa> findAllByItemId(Long itemId);
 
     @Query("""
             select c from Conversa c
@@ -39,7 +44,7 @@ public interface ConversaRepository extends JpaRepository<Conversa, Long> {
               join fetch c.donoItem
               join fetch c.interessado
             where c.donoItem.id = :usuarioId or c.interessado.id = :usuarioId
-            order by c.dataCriacao desc
+            order by c.ultimaAtividade desc
             """)
     List<Conversa> findDoUsuario(@Param("usuarioId") Long usuarioId);
 

@@ -1,5 +1,14 @@
 export interface ConversationUser { id: number; name: string }
 
+export type ConversationClosureReason =
+  | 'REIVINDICACAO_RECUSADA'
+  | 'REIVINDICACAO_CANCELADA'
+  | 'OUTRO_REIVINDICANTE_ACEITO'
+  | 'SEM_DEVOLUCAO'
+  | 'ITEM_DEVOLVIDO'
+  | 'ITEM_CANCELADO'
+  | 'ITEM_EXPIRADO'
+
 export interface Conversation {
   id: number
   itemId: number
@@ -12,6 +21,7 @@ export interface Conversation {
   interestedRequestedClosure: boolean
   closedAt?: string
   closedBySupport: boolean
+  closureReason?: ConversationClosureReason
   mediation?: { id: number; status: 'PENDENTE' | 'EM_ANDAMENTO' | 'RESOLVIDO'; responsible?: ConversationUser }
 }
 

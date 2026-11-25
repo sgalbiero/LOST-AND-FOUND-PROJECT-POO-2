@@ -3,6 +3,7 @@ package com.portal.achadosperdidos.dto;
 import com.portal.achadosperdidos.entity.Conversa;
 import com.portal.achadosperdidos.entity.Mediacao;
 import com.portal.achadosperdidos.enums.StatusMediacao;
+import com.portal.achadosperdidos.enums.MotivoEncerramentoConversa;
 
 import java.time.LocalDateTime;
 
@@ -22,7 +23,7 @@ public final class ConversaDto {
                            UsuarioDto.Resumo interessado, LocalDateTime dataCriacao, long naoLidas,
                            boolean encerramentoDonoSolicitado, boolean encerramentoInteressadoSolicitado,
                            LocalDateTime dataEncerramento, boolean encerradaPelaEquipe,
-                           MediacaoResumo mediacao) {
+                           MotivoEncerramentoConversa motivoEncerramento, MediacaoResumo mediacao) {
         public static Response de(Conversa c, long naoLidas) {
             return de(c, naoLidas, null);
         }
@@ -32,7 +33,7 @@ public final class ConversaDto {
                     UsuarioDto.Resumo.de(c.getDonoItem()), UsuarioDto.Resumo.de(c.getInteressado()),
                     c.getDataCriacao(), naoLidas, c.isEncerramentoDonoSolicitado(),
                     c.isEncerramentoInteressadoSolicitado(), c.getDataEncerramento(),
-                    c.isEncerradaPelaEquipe(), MediacaoResumo.de(mediacao));
+                    c.isEncerradaPelaEquipe(), c.getMotivoEncerramento(), MediacaoResumo.de(mediacao));
         }
     }
 }

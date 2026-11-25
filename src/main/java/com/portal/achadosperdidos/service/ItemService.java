@@ -8,6 +8,7 @@ import com.portal.achadosperdidos.entity.Usuario;
 import com.portal.achadosperdidos.enums.StatusItem;
 import com.portal.achadosperdidos.enums.StatusReivindicacao;
 import com.portal.achadosperdidos.enums.TipoItem;
+import com.portal.achadosperdidos.enums.MotivoEncerramentoConversa;
 import com.portal.achadosperdidos.exception.RecursoNaoEncontradoException;
 import com.portal.achadosperdidos.exception.RegraNegocioException;
 import com.portal.achadosperdidos.repository.CategoriaRepository;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.EnumSet;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +44,7 @@ public class ItemService {
     private final LocalRepository localRepository;
     private final ReivindicacaoRepository reivindicacaoRepository;
     private final AcessoService acesso;
+    private final CicloNegociacaoService cicloNegociacao;
 
     @Value("${app.item.dias-expiracao:90}")
     private int diasExpiracao;
@@ -86,16 +89,25 @@ public class ItemService {
         if (item.getStatus() != StatusItem.ABERTO && item.getStatus() != StatusItem.EM_NEGOCIACAO) {
             throw new RegraNegocioException("Este item não pode mais ser cancelado (status: " + item.getStatus() + ")");
         }
-        reivindicacaoRepository.findByItemIdAndStatus(itemId, StatusReivindicacao.ACEITA)
-                .ifPresent(r -> r.cancelar());
+        reivindicacaoRepository.findAllByItemIdAndStatusIn(itemId,
+                        EnumSet.of(StatusReivindicacao.PENDENTE, StatusReivindicacao.ACEITA))
+                .forEach(r -> r.cancelar());
         item.setStatus(StatusItem.CANCELADO);
+        cicloNegociacao.itemFinalizado(item, MotivoEncerramentoConversa.ITEM_CANCELADO);
         return ItemDto.Detalhe.de(buscarDetalhado(itemId));
     }
 
     /** Chamado pelo agendador: marca como EXPIRADO os itens abertos com prazo vencido. */
     @Transactional
     public int expirarVencidos() {
-        return itemRepository.expirarVencidos(StatusItem.ABERTO, StatusItem.EXPIRADO, LocalDateTime.now());
+        List<Item> expirados = itemRepository.findExpiradosParaAtualizar(StatusItem.ABERTO, LocalDateTime.now());
+        expirados.forEach(item -> {
+            reivindicacaoRepository.findAllByItemIdAndStatus(item.getId(), StatusReivindicacao.PENDENTE)
+                    .forEach(r -> r.cancelar());
+            item.setStatus(StatusItem.EXPIRADO);
+            cicloNegociacao.itemFinalizado(item, MotivoEncerramentoConversa.ITEM_EXPIRADO);
+        });
+        return expirados.size();
     }
 
     // ------------------------------------------------------------------ leitura

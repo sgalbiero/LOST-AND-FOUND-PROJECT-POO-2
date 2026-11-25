@@ -7,6 +7,8 @@ import type { ItemDetails } from '../domain/Item'
 import { itemStatusLabels } from './itemLabels'
 import { useItemServices } from './ItemServicesContext'
 import { useModeration } from '../../moderation/presentation/ModerationContext'
+import { ConfirmDialog, TextDialog } from '../../../shared/ui/Dialog'
+import { loginPath } from '../../auth/presentation/authNavigation'
 
 export function ItemDetailsPage() {
   const { items } = useItemServices()
@@ -17,6 +19,9 @@ export function ItemDetailsPage() {
   const [item, setItem] = useState<ItemDetails | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [feedback, setFeedback] = useState('')
 
   useEffect(() => {
     const controller = new AbortController()
@@ -33,18 +38,15 @@ export function ItemDetailsPage() {
   const currentItemId = item.id
 
   async function cancelItem() {
-    if (!confirm('Cancelar esta publicação? Esta ação não poderá ser desfeita.')) return
     setBusy(true); setError('')
-    try { setItem(await items.cancel(currentItemId)) }
+    try { setItem(await items.cancel(currentItemId)); setCancelOpen(false); setFeedback('Publicação cancelada.') }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível cancelar a publicação.') }
     finally { setBusy(false) }
   }
 
-  async function reportItem() {
-    const reason = prompt('Por que esta publicação deve ser analisada pela equipe?')
-    if (!reason) return
+  async function reportItem(reason: string) {
     setBusy(true); setError('')
-    try { await moderation.reportItem(currentItemId, reason); alert('Denúncia enviada para a equipe.') }
+    try { await moderation.reportItem(currentItemId, reason); setReportOpen(false); setFeedback('Denúncia enviada para a equipe.') }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível enviar a denúncia.') }
     finally { setBusy(false) }
   }
@@ -52,6 +54,7 @@ export function ItemDetailsPage() {
   return (
     <div className="page-container detail-page">
       <Link className="back-link" to="/">Voltar para explorar</Link>
+      {feedback && <div className="success-banner" role="status">{feedback}</div>}
       <div className="detail-grid">
         <div className="gallery">
           {item.photos.length ? item.photos.map((photo, index) => <img src={photo} alt={`${item.title}, foto ${index + 1}`} key={photo} />) : <div className="photo-placeholder large">Sem foto</div>}
@@ -67,15 +70,17 @@ export function ItemDetailsPage() {
               {item.status === 'EM_NEGOCIACAO' && <button className="button button-primary" onClick={() => navigate(`/itens/${item.id}/devolucao`)}>Registrar devolução</button>}
               {item.status === 'DEVOLVIDO' && <button className="button button-primary" onClick={() => navigate(`/itens/${item.id}/devolucao`)}>Ver comprovante</button>}
               {item.status === 'ABERTO' && <button className="button button-secondary" onClick={() => navigate('/reivindicacoes?aba=recebidas')}>Ver reivindicações</button>}
-              {item.status === 'ABERTO' && <button className="button button-ghost" disabled={busy} onClick={cancelItem}>{busy ? 'Cancelando...' : 'Cancelar publicação'}</button>}
+              {item.status === 'ABERTO' && <button className="button button-ghost" disabled={busy} onClick={() => setCancelOpen(true)}>Cancelar publicação</button>}
               {item.status === 'EM_NEGOCIACAO' && <button className="button button-secondary" onClick={() => navigate(`/mensagens?item=${item.id}`)}>Abrir conversa</button>}
             </div>
           ) : item.status === 'ABERTO' ? (
-            <div className="action-stack"><button className="button button-primary" onClick={() => navigate(user ? `/reivindicacoes?item=${item.id}` : `/entrar?retorno=/itens/${item.id}`)}>Reivindicar item</button><button className="button button-secondary" onClick={() => navigate(user ? `/mensagens?item=${item.id}` : `/entrar?retorno=/itens/${item.id}`)}>Iniciar conversa</button>{user && <button className="button button-ghost" disabled={busy} onClick={() => navigate(`/mediacoes?item=${item.id}`)}>Solicitar mediação</button>}{user && <button className="button button-ghost" disabled={busy} onClick={reportItem}>Denunciar publicação</button>}</div>
+            <div className="action-stack"><button className="button button-primary" onClick={() => navigate(user ? `/reivindicacoes?item=${item.id}` : loginPath(`/reivindicacoes?item=${item.id}`))}>Reivindicar item</button>{user && <button className="button button-ghost" disabled={busy} onClick={() => setReportOpen(true)}>Denunciar publicação</button>}</div>
           ) : <div className="closed-item-note">{item.status === 'DEVOLVIDO' ? 'Este item já foi devolvido.' : 'Este item já está em negociação.'}</div>}
           <p className="safety-note"><strong>Cuide dos seus dados.</strong> Combine detalhes pelo portal e não publique telefone ou endereço.</p>
         </article>
       </div>
+      {reportOpen && <TextDialog title="Denunciar publicação" description="Explique objetivamente por que este conteúdo precisa ser analisado pela equipe." label="Motivo da denúncia" submitLabel="Enviar denúncia" busy={busy} onClose={() => setReportOpen(false)} onSubmit={reportItem} />}
+      {cancelOpen && <ConfirmDialog title="Cancelar publicação?" description="A publicação deixará de aparecer nas buscas e esta ação não poderá ser desfeita." confirmLabel="Cancelar publicação" danger busy={busy} onClose={() => setCancelOpen(false)} onConfirm={cancelItem} />}
     </div>
   )
 }

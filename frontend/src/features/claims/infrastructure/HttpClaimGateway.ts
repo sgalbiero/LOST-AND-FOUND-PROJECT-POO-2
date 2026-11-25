@@ -7,6 +7,7 @@ interface ClaimDto {
   id: number
   itemId: number
   itemTitulo: string
+  itemStatus: Claim['itemStatus']
   reivindicante: { id: number; nome: string }
   justificativa: string
   status: ClaimStatus
@@ -52,6 +53,7 @@ function mapClaim(dto: ClaimDto): Claim {
     id: dto.id,
     itemId: dto.itemId,
     itemTitle: dto.itemTitulo,
+    itemStatus: dto.itemStatus,
     claimant: { id: dto.reivindicante.id, name: dto.reivindicante.nome },
     justification: dto.justificativa,
     status: dto.status,

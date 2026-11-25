@@ -20,14 +20,6 @@ public class MediacaoController {
     private final MediacaoService service;
     private final UsuarioAtualService usuarioAtual;
 
-    @PostMapping("/item/{itemId}")
-    @ResponseStatus(HttpStatus.CREATED)
-    public MediacaoDto.Response solicitar(@PathVariable Long itemId,
-                                           @Valid @RequestBody MediacaoDto.Solicitar req,
-                                           Authentication auth) {
-        return service.solicitar(usuarioAtual.id(auth), itemId, req);
-    }
-
     @PostMapping("/conversa/{conversaId}")
     @ResponseStatus(HttpStatus.CREATED)
     public MediacaoDto.Response solicitarDaConversa(@PathVariable Long conversaId,

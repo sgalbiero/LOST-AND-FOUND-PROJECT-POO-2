@@ -31,15 +31,13 @@ public class ConversaService {
     private final ReivindicacaoRepository reivindicacaoRepository;
     private final MediacaoRepository mediacaoRepository;
     private final AcessoService acesso;
+    private final CicloNegociacaoService cicloNegociacao;
 
-    /**
-     * O interessado inicia (ou retoma) a conversa com o dono do item.
-     * Só é possível iniciar conversa em itens ABERTOS ou EM_NEGOCIACAO.
-     */
+    /** O interessado inicia (ou retoma) a conversa depois de reivindicar o item. */
     @Transactional
     public ConversaDto.Response iniciar(Long usuarioId, Long itemId) {
         Usuario usuario = acesso.usuarioAtivo(usuarioId);
-        Item item = itemRepository.findDetalhadoById(itemId)
+        Item item = itemRepository.findByIdParaAtualizar(itemId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Item", itemId));
 
         if (item.getStatus() != StatusItem.ABERTO && item.getStatus() != StatusItem.EM_NEGOCIACAO) {
@@ -55,6 +53,15 @@ public class ConversaService {
                     .map(r -> r.getReivindicante())
                     .orElseThrow(() -> new RegraNegocioException("Não há uma reivindicação aceita para este item"));
         } else {
+            var reivindicacao = reivindicacaoRepository.findByItemIdAndReivindicanteId(itemId, usuarioId)
+                    .orElseThrow(() -> new RegraNegocioException("Reivindique o item antes de iniciar uma conversa"));
+            boolean pendenteEmItemAberto = item.getStatus() == StatusItem.ABERTO
+                    && reivindicacao.getStatus() == StatusReivindicacao.PENDENTE;
+            boolean aceitaEmNegociacao = item.getStatus() == StatusItem.EM_NEGOCIACAO
+                    && reivindicacao.getStatus() == StatusReivindicacao.ACEITA;
+            if (!pendenteEmItemAberto && !aceitaEmNegociacao) {
+                throw new RegraNegocioException("Esta reivindicação não permite iniciar uma conversa");
+            }
             interessado = usuario;
         }
 
@@ -99,16 +106,18 @@ public class ConversaService {
     @Transactional
     public ConversaDto.Response solicitarEncerramento(Long usuarioId, Long conversaId) {
         Usuario usuario = acesso.usuarioAtivo(usuarioId);
-        Conversa conversa = conversaRepository.findDetalhadoParaAtualizarById(conversaId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
+        Item item = bloquearItemDaConversa(conversaId);
+        Conversa conversa = buscarConversaParaAtualizar(conversaId);
         if (acesso.isAdmin(usuario)) {
             conversa.encerrarPelaEquipe();
+            cicloNegociacao.encerrarSemDevolucao(item, conversa);
             return ConversaDto.Response.de(conversa, 0);
         }
         if (!conversa.participaPorId(usuarioId)) {
             throw new AcessoNegadoException("Você não participa desta conversa");
         }
         conversa.solicitarEncerramento(usuarioId);
+        if (conversa.isEncerrada()) cicloNegociacao.encerrarSemDevolucao(item, conversa);
         return ConversaDto.Response.de(conversa, naoLidas(conversaId, usuarioId));
     }
 
@@ -121,6 +130,40 @@ public class ConversaService {
             throw new AcessoNegadoException("Você não participa desta conversa");
         }
         return c;
+    }
+
+    /** Bloqueia item e conversa na ordem global antes de validar o participante. */
+    public Conversa carregarComoParticipanteParaAtualizar(Long usuarioId, Long conversaId) {
+        Usuario usuario = acesso.usuarioAtivo(usuarioId);
+        bloquearItemDaConversa(conversaId);
+        Conversa conversa = buscarConversaParaAtualizar(conversaId);
+        if (!conversa.participa(usuario)) {
+            throw new AcessoNegadoException("Você não participa desta conversa");
+        }
+        return conversa;
+    }
+
+    /** Bloqueio interno para casos de uso que já validaram sua própria autorização. */
+    public Conversa carregarParaAtualizar(Long conversaId) {
+        bloquearItemDaConversa(conversaId);
+        return buscarConversaParaAtualizar(conversaId);
+    }
+
+    /** Garante que a conversa ainda corresponde a uma reivindicação operacional. */
+    public void exigirVinculoAtivo(Conversa conversa) {
+        if (conversa.isEncerrada()) {
+            throw new RegraNegocioException("Esta conversa já foi encerrada");
+        }
+        var reivindicacao = reivindicacaoRepository.findByItemIdAndReivindicanteId(
+                        conversa.getItem().getId(), conversa.getInteressado().getId())
+                .orElseThrow(() -> new RegraNegocioException("A conversa não possui uma reivindicação válida"));
+        boolean pendenteEmItemAberto = conversa.getItem().getStatus() == StatusItem.ABERTO
+                && reivindicacao.getStatus() == StatusReivindicacao.PENDENTE;
+        boolean aceitaEmNegociacao = conversa.getItem().getStatus() == StatusItem.EM_NEGOCIACAO
+                && reivindicacao.getStatus() == StatusReivindicacao.ACEITA;
+        if (!pendenteEmItemAberto && !aceitaEmNegociacao) {
+            throw new RegraNegocioException("Esta conversa não está mais vinculada a uma negociação ativa");
+        }
     }
 
     /** Participantes sempre acessam; o mediador acessa somente a conversa que assumiu e enquanto ela está em atendimento. */
@@ -138,13 +181,42 @@ public class ConversaService {
         return conversa;
     }
 
+    /** Versão bloqueante usada por comandos que enviam mensagem ou alteram o atendimento. */
+    public Conversa carregarComAcessoMensagensParaAtualizar(Long usuarioId, Long conversaId) {
+        Usuario usuario = acesso.usuarioAtivo(usuarioId);
+        bloquearItemDaConversa(conversaId);
+        Conversa conversa = buscarConversaParaAtualizar(conversaId);
+        if (conversa.participaPorId(usuarioId)) return conversa;
+        boolean mediadorResponsavel = acesso.isAdmin(usuario)
+                && mediacaoRepository.existsByConversaIdAndAdminResponsavelIdAndStatus(
+                conversaId, usuarioId, com.portal.achadosperdidos.enums.StatusMediacao.EM_ANDAMENTO);
+        if (!mediadorResponsavel) {
+            throw new AcessoNegadoException("Você não tem acesso a esta conversa");
+        }
+        return conversa;
+    }
+
     private long naoLidas(Long conversaId, Long usuarioId) {
         return mensagemRepository.countByConversaIdAndLidaFalseAndRemetenteIdNot(conversaId, usuarioId);
     }
 
     private ConversaDto.Response resposta(Conversa conversa, Long usuarioId) {
-        var mediacao = mediacaoRepository.findFirstByConversaIdAndStatusNotOrderByDataSolicitacaoDesc(
-                conversa.getId(), com.portal.achadosperdidos.enums.StatusMediacao.RESOLVIDO).orElse(null);
+        var mediacao = mediacaoRepository.findFirstByConversaIdAndStatusInOrderByDataSolicitacaoDesc(
+                conversa.getId(), java.util.EnumSet.of(
+                        com.portal.achadosperdidos.enums.StatusMediacao.PENDENTE,
+                        com.portal.achadosperdidos.enums.StatusMediacao.EM_ANDAMENTO)).orElse(null);
         return ConversaDto.Response.de(conversa, naoLidas(conversa.getId(), usuarioId), mediacao);
+    }
+
+    private Item bloquearItemDaConversa(Long conversaId) {
+        Long itemId = conversaRepository.findItemIdById(conversaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
+        return itemRepository.findByIdParaAtualizar(itemId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Item", itemId));
+    }
+
+    private Conversa buscarConversaParaAtualizar(Long conversaId) {
+        return conversaRepository.findDetalhadoParaAtualizarById(conversaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
     }
 }

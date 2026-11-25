@@ -7,6 +7,7 @@ import com.portal.achadosperdidos.entity.Reivindicacao;
 import com.portal.achadosperdidos.entity.Usuario;
 import com.portal.achadosperdidos.enums.StatusItem;
 import com.portal.achadosperdidos.enums.StatusReivindicacao;
+import com.portal.achadosperdidos.enums.MotivoEncerramentoConversa;
 import com.portal.achadosperdidos.exception.AcessoNegadoException;
 import com.portal.achadosperdidos.exception.ConflitoException;
 import com.portal.achadosperdidos.exception.RecursoNaoEncontradoException;
@@ -28,6 +29,7 @@ public class DevolucaoService {
     private final ReivindicacaoRepository reivindicacaoRepository;
     private final ItemRepository itemRepository;
     private final AcessoService acesso;
+    private final CicloNegociacaoService cicloNegociacao;
 
     /**
      * Registra a devolução (feita pelo dono do item ou por um admin).
@@ -59,6 +61,7 @@ public class DevolucaoService {
         item.setStatus(StatusItem.DEVOLVIDO);
         reivindicacaoRepository.findAllByItemIdAndStatus(itemId, StatusReivindicacao.PENDENTE)
                 .forEach(Reivindicacao::recusar);
+        cicloNegociacao.itemFinalizado(item, MotivoEncerramentoConversa.ITEM_DEVOLVIDO);
 
         return DevolucaoDto.Response.de(d);
     }

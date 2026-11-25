@@ -2,6 +2,7 @@ package com.portal.achadosperdidos.dto;
 
 import com.portal.achadosperdidos.entity.Reivindicacao;
 import com.portal.achadosperdidos.enums.StatusReivindicacao;
+import com.portal.achadosperdidos.enums.StatusItem;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -15,11 +16,12 @@ public final class ReivindicacaoDto {
     public record Criar(@NotBlank @Size(max = 1000) String justificativa) {
     }
 
-    public record Response(Long id, Long itemId, String itemTitulo, UsuarioDto.Resumo reivindicante,
+    public record Response(Long id, Long itemId, String itemTitulo, StatusItem itemStatus,
+                           UsuarioDto.Resumo reivindicante,
                            String justificativa, StatusReivindicacao status,
                            LocalDateTime dataCriacao, LocalDateTime dataResposta) {
         public static Response de(Reivindicacao r) {
-            return new Response(r.getId(), r.getItem().getId(), r.getItem().getTitulo(),
+            return new Response(r.getId(), r.getItem().getId(), r.getItem().getTitulo(), r.getItem().getStatus(),
                     UsuarioDto.Resumo.de(r.getReivindicante()), r.getJustificativa(),
                     r.getStatus(), r.getDataCriacao(), r.getDataResposta());
         }

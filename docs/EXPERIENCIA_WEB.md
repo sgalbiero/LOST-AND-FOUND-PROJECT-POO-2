@@ -58,7 +58,7 @@ Mensagens e Perfil. A administração fica dentro do menu do perfil.
 - Tipo e status em destaque.
 - Título, descrição, data da ocorrência, categoria, local e autor.
 - Nunca exibe e-mail ou telefone publicamente.
-- Item de outro usuário, aberto: `Reivindicar item`, `Iniciar conversa` e `Denunciar`.
+- Item de outro usuário, aberto: `Reivindicar item` e `Denunciar`.
 - Item do próprio usuário: `Editar`, `Ver reivindicações` e `Cancelar publicação`.
 - Item em negociação: mostra o andamento e permite abrir a conversa relacionada.
 - Item devolvido: exibe confirmação de devolução em modo somente leitura.
@@ -115,7 +115,7 @@ Fluxo em modal iniciado no detalhe.
 - Abas `Pendentes`, `Aceitas` e `Encerradas`.
 - Cada registro informa item, justificativa, data e status.
 - Reivindicação pendente ou aceita pode ser cancelada com confirmação.
-- Reivindicação aceita oferece abrir a conversa e, quando permitido, confirmar devolução.
+- Reivindicação pendente ou aceita oferece iniciar ou abrir a conversa com o responsável pelo item.
 
 ### 9. Reivindicações recebidas — `/meus-itens/:itemId/reivindicacoes`
 
@@ -135,13 +135,21 @@ Fluxo em modal iniciado no detalhe.
 - Mensagens são paginadas e carregadas ao rolar para cima.
 - Ao abrir a conversa, mensagens recebidas são marcadas como lidas.
 - Menu de mensagem recebida permite denunciar.
+- Recusa, cancelamento, escolha de outro reivindicante, devolução, cancelamento ou expiração do
+  item encerram a conversa relacionada em modo histórico, com o motivo visível aos participantes.
+- Encerrar uma negociação aceita sem devolução cancela o aceite e devolve o item ao catálogo.
 - A primeira versão atualiza por consulta periódica; WebSocket fica como evolução posterior.
 
 ### 11. Mediações — `/mediacoes`
 
 - Aluno vê as próprias solicitações e seus estados.
-- Solicitação nasce a partir do detalhe do item, com motivo obrigatório.
+- Solicitação nasce a partir de uma conversa ativa, com motivo obrigatório.
+- Cada conversa pode ter no máximo uma mediação aberta; conversas diferentes do mesmo item são
+  tratadas de forma independente.
 - Mediação resolvida mostra o parecer e a data da resolução.
+- Mediações são canceladas automaticamente quando o vínculo da conversa deixa de ser válido.
+- Se a equipe encerrar uma negociação sem devolução, a reivindicação aceita é cancelada e o item
+  volta ao catálogo para novas tentativas.
 
 ### 12. Devolução
 

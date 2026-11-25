@@ -11,8 +11,8 @@ import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 /**
- * "Uma única mediação em aberto por item" é garantida pelo índice parcial
- * uq_mediacao_aberta_por_item no banco.
+ * "Uma única mediação em aberto por conversa" é garantida pelo índice parcial
+ * uq_mediacao_aberta_por_conversa no banco.
  */
 @Getter @Setter @NoArgsConstructor
 @Entity
@@ -69,5 +69,12 @@ public class Mediacao extends BaseEntity {
         this.parecer = parecer;
         this.dataResolucao = LocalDateTime.now();
         this.status = StatusMediacao.RESOLVIDO;
+    }
+
+    public void cancelar() {
+        if (status == StatusMediacao.PENDENTE || status == StatusMediacao.EM_ANDAMENTO) {
+            this.status = StatusMediacao.CANCELADA;
+            this.dataResolucao = LocalDateTime.now();
+        }
     }
 }

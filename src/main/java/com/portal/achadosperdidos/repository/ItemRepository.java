@@ -36,15 +36,9 @@ public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificat
     @Query("select i from Item i where i.id = :id")
     Optional<Item> findByIdParaAtualizar(@Param("id") Long id);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-            update Item i
-               set i.status = :novo, i.atualizadoEm = :agora
-             where i.status = :atual
-               and i.expiraEm is not null
-               and i.expiraEm < :agora
-            """)
-    int expirarVencidos(@Param("atual") StatusItem atual,
-                        @Param("novo") StatusItem novo,
-                        @Param("agora") LocalDateTime agora);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select i from Item i where i.status = :status and i.expiraEm is not null and i.expiraEm < :agora")
+    java.util.List<Item> findExpiradosParaAtualizar(@Param("status") StatusItem status,
+                                                     @Param("agora") LocalDateTime agora);
+
 }

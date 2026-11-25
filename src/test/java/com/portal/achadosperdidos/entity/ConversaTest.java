@@ -52,6 +52,15 @@ class ConversaTest {
         assertFalse(conversa.isEncerramentoInteressadoSolicitado());
     }
 
+    @Test
+    void registraAtividadeQuandoHaNovaMensagem() {
+        Conversa conversa = new Conversa();
+
+        conversa.registrarAtividade();
+
+        assertNotNull(conversa.getUltimaAtividade());
+    }
+
     private Usuario usuario(Long id) {
         Usuario usuario = mock(Usuario.class);
         when(usuario.getId()).thenReturn(id);

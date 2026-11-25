@@ -6,6 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 import java.util.Collection;
 import java.util.List;
@@ -13,7 +17,18 @@ import java.util.Optional;
 
 public interface MediacaoRepository extends JpaRepository<Mediacao, Long> {
 
-    boolean existsByItemIdAndStatusNot(Long itemId, StatusMediacao status);
+    @Query("select m.conversa.id from Mediacao m where m.id = :id")
+    Optional<Long> findConversaIdById(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from Mediacao m where m.id = :id")
+    Optional<Mediacao> findByIdParaAtualizar(@Param("id") Long id);
+
+    boolean existsByConversaIdAndStatusIn(Long conversaId, Collection<StatusMediacao> status);
+
+    List<Mediacao> findAllByItemIdAndStatusIn(Long itemId, Collection<StatusMediacao> status);
+
+    List<Mediacao> findAllByConversaIdAndStatusIn(Long conversaId, Collection<StatusMediacao> status);
 
     @EntityGraph(attributePaths = {"item", "conversa", "conversa.donoItem", "conversa.interessado", "solicitante", "adminResponsavel"})
     Page<Mediacao> findByStatusIn(Collection<StatusMediacao> status, Pageable pageable);
@@ -22,7 +37,8 @@ public interface MediacaoRepository extends JpaRepository<Mediacao, Long> {
     List<Mediacao> findBySolicitanteIdOrderByDataSolicitacaoDesc(Long solicitanteId);
 
     @EntityGraph(attributePaths = {"item", "conversa", "conversa.donoItem", "conversa.interessado", "solicitante", "adminResponsavel"})
-    Optional<Mediacao> findFirstByConversaIdAndStatusNotOrderByDataSolicitacaoDesc(Long conversaId, StatusMediacao status);
+    Optional<Mediacao> findFirstByConversaIdAndStatusInOrderByDataSolicitacaoDesc(
+            Long conversaId, Collection<StatusMediacao> status);
 
     @EntityGraph(attributePaths = {"item", "conversa", "conversa.donoItem", "conversa.interessado", "solicitante", "adminResponsavel"})
     List<Mediacao> findByAdminResponsavelIdAndStatusOrderByDataSolicitacaoDesc(Long adminId, StatusMediacao status);

@@ -35,6 +35,6 @@ class FakeClaimGateway implements ClaimGateway {
 }
 
 const claim: Claim = {
-  id: 1, itemId: 1, itemTitle: 'Mochila', claimant: { id: 1, name: 'Teste' },
+  id: 1, itemId: 1, itemTitle: 'Mochila', itemStatus: 'ABERTO', claimant: { id: 1, name: 'Teste' },
   justification: 'Reconheço o chaveiro interno.', status: 'PENDENTE', createdAt: '2026-11-23T12:00:00',
 }

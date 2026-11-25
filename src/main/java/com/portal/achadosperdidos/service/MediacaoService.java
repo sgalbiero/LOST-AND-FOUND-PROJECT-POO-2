@@ -10,10 +10,7 @@ import com.portal.achadosperdidos.exception.AcessoNegadoException;
 import com.portal.achadosperdidos.exception.ConflitoException;
 import com.portal.achadosperdidos.exception.RecursoNaoEncontradoException;
 import com.portal.achadosperdidos.exception.RegraNegocioException;
-import com.portal.achadosperdidos.repository.ConversaRepository;
-import com.portal.achadosperdidos.repository.ItemRepository;
 import com.portal.achadosperdidos.repository.MediacaoRepository;
-import com.portal.achadosperdidos.repository.ReivindicacaoRepository;
 import com.portal.achadosperdidos.util.TextoUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,43 +28,21 @@ import java.util.Set;
 @Transactional(readOnly = true)
 public class MediacaoService {
 
+    private static final Set<StatusMediacao> STATUS_ABERTOS =
+            Set.of(StatusMediacao.PENDENTE, StatusMediacao.EM_ANDAMENTO);
+
     private final MediacaoRepository mediacaoRepository;
-    private final ItemRepository itemRepository;
-    private final ReivindicacaoRepository reivindicacaoRepository;
-    private final ConversaRepository conversaRepository;
     private final AcessoService acesso;
-
-    /** Pedido de ajuda da direção. Só quem está envolvido com o item pode solicitar. */
-    @Transactional
-    public MediacaoDto.Response solicitar(Long usuarioId, Long itemId, MediacaoDto.Solicitar req) {
-        Usuario solicitante = acesso.usuarioAtivo(usuarioId);
-        Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Item", itemId));
-
-        boolean envolvido = item.getUsuario().getId().equals(usuarioId)
-                || reivindicacaoRepository.existsByItemIdAndReivindicanteId(itemId, usuarioId)
-                || conversaRepository.findByItemIdAndInteressadoId(itemId, usuarioId).isPresent();
-        if (!envolvido) {
-            throw new AcessoNegadoException("Apenas pessoas envolvidas com o item podem solicitar mediação");
-        }
-        if (mediacaoRepository.existsByItemIdAndStatusNot(itemId, StatusMediacao.RESOLVIDO)) {
-            throw new ConflitoException("Já existe uma mediação em aberto para este item");
-        }
-
-        return criar(solicitante, item, null, req);
-    }
+    private final ConversaService conversaService;
 
     @Transactional
     public MediacaoDto.Response solicitarDaConversa(Long usuarioId, Long conversaId, MediacaoDto.Solicitar req) {
         Usuario solicitante = acesso.usuarioAtivo(usuarioId);
-        Conversa conversa = conversaRepository.findDetalhadoById(conversaId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
-        if (!conversa.participaPorId(usuarioId)) {
-            throw new AcessoNegadoException("Apenas participantes podem pedir ajuda para esta conversa");
-        }
+        Conversa conversa = conversaService.carregarComoParticipanteParaAtualizar(usuarioId, conversaId);
+        conversaService.exigirVinculoAtivo(conversa);
         Item item = conversa.getItem();
-        if (mediacaoRepository.existsByItemIdAndStatusNot(item.getId(), StatusMediacao.RESOLVIDO)) {
-            throw new ConflitoException("Já existe um pedido de ajuda em aberto para este item");
+        if (mediacaoRepository.existsByConversaIdAndStatusIn(conversaId, STATUS_ABERTOS)) {
+            throw new ConflitoException("Já existe um pedido de ajuda em aberto para esta conversa");
         }
         return criar(solicitante, item, conversa, req);
     }
@@ -84,7 +59,9 @@ public class MediacaoService {
     @Transactional
     public MediacaoDto.Response assumir(Long adminId, Long mediacaoId) {
         Usuario admin = acesso.exigirAdmin(adminId);
-        Mediacao m = buscarEntidade(mediacaoId);
+        Contexto contexto = carregarComBloqueio(mediacaoId);
+        conversaService.exigirVinculoAtivo(contexto.conversa());
+        Mediacao m = contexto.mediacao();
         if (m.getStatus() != StatusMediacao.PENDENTE) {
             throw new RegraNegocioException("Esta mediação já foi assumida ou resolvida");
         }
@@ -96,7 +73,7 @@ public class MediacaoService {
     @Transactional
     public MediacaoDto.Response resolver(Long adminId, Long mediacaoId, MediacaoDto.Resolver req) {
         acesso.exigirAdmin(adminId);
-        Mediacao m = buscarEntidade(mediacaoId);
+        Mediacao m = carregarComBloqueio(mediacaoId).mediacao();
         if (m.getStatus() != StatusMediacao.EM_ANDAMENTO) {
             throw new RegraNegocioException("Só é possível resolver uma mediação em andamento");
         }
@@ -112,7 +89,7 @@ public class MediacaoService {
         acesso.exigirAdmin(adminId);
         Pageable p = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 50),
                 Sort.by(Sort.Direction.ASC, "dataSolicitacao"));
-        return mediacaoRepository.findByStatusIn(Set.of(StatusMediacao.PENDENTE, StatusMediacao.EM_ANDAMENTO), p)
+        return mediacaoRepository.findByStatusIn(STATUS_ABERTOS, p)
                 .map(MediacaoDto.Response::de);
     }
 
@@ -122,8 +99,15 @@ public class MediacaoService {
                 .map(MediacaoDto.Response::de).toList();
     }
 
-    private Mediacao buscarEntidade(Long id) {
-        return mediacaoRepository.findById(id)
+    private record Contexto(Mediacao mediacao, Conversa conversa) {
+    }
+
+    private Contexto carregarComBloqueio(Long id) {
+        Long conversaId = mediacaoRepository.findConversaIdById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Mediação", id));
+        Conversa conversa = conversaService.carregarParaAtualizar(conversaId);
+        Mediacao mediacao = mediacaoRepository.findByIdParaAtualizar(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Mediação", id));
+        return new Contexto(mediacao, conversa);
     }
 }

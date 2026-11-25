@@ -129,7 +129,7 @@ export function ClaimsPage() {
         <div className="claims-list-heading"><div><h2 id="claims-list-title">{tab === 'enviadas' ? 'Reivindicações enviadas' : 'Solicitações recebidas'}</h2><p>{tab === 'enviadas' ? 'Veja o andamento das suas solicitações.' : 'Analise as informações antes de aceitar uma solicitação.'}</p></div>{tab === 'enviadas' && <Link className="button button-secondary" to="/">Explorar itens</Link>}</div>
 
         {loading && <div className="claims-list">{Array.from({ length: 3 }).map((_, index) => <div className="claim-card skeleton" key={index} />)}</div>}
-        {!loading && visible.length === 0 && <StateView message={tab === 'enviadas' ? 'Você ainda não enviou nenhuma reivindicação.' : 'Nenhuma pessoa reivindicou seus itens até agora.'} action={tab === 'enviadas' ? 'Explorar itens' : 'Ver meus itens'} onAction={() => location.assign(tab === 'enviadas' ? '/' : '/meus-itens')} />}
+        {!loading && visible.length === 0 && <StateView message={tab === 'enviadas' ? 'Você ainda não enviou nenhuma reivindicação.' : 'Nenhuma pessoa reivindicou seus itens até agora.'} action={tab === 'enviadas' ? 'Explorar itens' : 'Ver meus itens'} onAction={() => navigate(tab === 'enviadas' ? '/' : '/meus-itens')} />}
         {!loading && visible.length > 0 && <div className="claims-list">{visible.map(claim => <ClaimCard claim={claim} received={tab === 'recebidas'} busy={actionId === claim.id} onAction={perform} key={claim.id} />)}</div>}
       </section>
     </div>
@@ -141,9 +141,9 @@ function ClaimCard({ claim, received, busy, onAction }: { claim: Claim; received
     <div className="claim-card-main"><div className="claim-card-top"><span className={`claim-status claim-status-${claim.status.toLowerCase()}`}>{statusLabels[claim.status]}</span><time dateTime={claim.createdAt}>{formatDateTime(claim.createdAt)}</time></div><Link to={`/itens/${claim.itemId}`}><h3>{claim.itemTitle}</h3></Link>{received && <p className="claim-person">Enviada por <strong>{claim.claimant.name}</strong></p>}<blockquote>{claim.justification}</blockquote></div>
     <div className="claim-card-actions">
       <Link className="button button-ghost" to={`/itens/${claim.itemId}`}>Ver item</Link>
-      {received && claim.status === 'PENDENTE' && <><button className="button button-secondary" disabled={busy} onClick={() => onAction(claim.id, 'refuse')}>Recusar</button><button className="button button-primary" disabled={busy} onClick={() => onAction(claim.id, 'accept')}>Aceitar</button></>}
+      {received && claim.status === 'PENDENTE' && <><button className="button button-secondary" disabled={busy} onClick={() => onAction(claim.id, 'refuse')}>Recusar</button>{claim.itemStatus === 'ABERTO' && <button className="button button-primary" disabled={busy} onClick={() => onAction(claim.id, 'accept')}>Aceitar</button>}</>}
       {!received && (claim.status === 'PENDENTE' || claim.status === 'ACEITA') && <button className="button button-secondary" disabled={busy} onClick={() => onAction(claim.id, 'cancel')}>Cancelar</button>}
-      {claim.status === 'ACEITA' && <Link className="button button-primary" to={`/mensagens?item=${claim.itemId}`}>Abrir conversa</Link>}
+      {!received && ((claim.status === 'PENDENTE' && claim.itemStatus === 'ABERTO') || claim.status === 'ACEITA') && <Link className="button button-primary" to={`/mensagens?item=${claim.itemId}`}>{claim.status === 'PENDENTE' ? 'Iniciar conversa' : 'Abrir conversa'}</Link>}
     </div>
   </article>
 }
