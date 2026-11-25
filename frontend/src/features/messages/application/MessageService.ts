@@ -8,6 +8,7 @@ export class MessageService {
     return this.gateway.start(itemId)
   }
   listConversations(signal?: AbortSignal) { return this.gateway.listConversations(signal) }
+  requestClosure(id: number) { return this.gateway.requestClosure(id) }
   listMessages(id: number, page = 0, size = 50, signal?: AbortSignal) { return this.gateway.listMessages(id, Math.max(0, page), Math.min(100, size), signal) }
   markRead(id: number) { return this.gateway.markRead(id) }
   unreadTotal(signal?: AbortSignal) { return this.gateway.unreadTotal(signal) }

@@ -18,11 +18,16 @@ public final class MediacaoDto {
     public record Resolver(@NotBlank @Size(max = 2000) String parecer) {
     }
 
-    public record Response(Long id, Long itemId, String itemTitulo, UsuarioDto.Resumo solicitante,
+    public record Response(Long id, Long itemId, String itemTitulo, Long conversaId,
+                           UsuarioDto.Resumo donoConversa, UsuarioDto.Resumo interessadoConversa,
+                           UsuarioDto.Resumo solicitante,
                            UsuarioDto.Resumo adminResponsavel, String motivo, StatusMediacao status,
                            LocalDateTime dataSolicitacao, LocalDateTime dataResolucao, String parecer) {
         public static Response de(Mediacao m) {
             return new Response(m.getId(), m.getItem().getId(), m.getItem().getTitulo(),
+                    m.getConversa() == null ? null : m.getConversa().getId(),
+                    m.getConversa() == null ? null : UsuarioDto.Resumo.de(m.getConversa().getDonoItem()),
+                    m.getConversa() == null ? null : UsuarioDto.Resumo.de(m.getConversa().getInteressado()),
                     UsuarioDto.Resumo.de(m.getSolicitante()), UsuarioDto.Resumo.de(m.getAdminResponsavel()),
                     m.getMotivo(), m.getStatus(), m.getDataSolicitacao(), m.getDataResolucao(), m.getParecer());
         }

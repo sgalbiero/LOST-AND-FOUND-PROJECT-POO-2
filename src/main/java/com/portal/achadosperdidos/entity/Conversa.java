@@ -32,6 +32,18 @@ public class Conversa extends BaseEntity {
     @Column(name = "data_criacao", nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
 
+    @Column(name = "encerramento_dono_solicitado", nullable = false)
+    private boolean encerramentoDonoSolicitado;
+
+    @Column(name = "encerramento_interessado_solicitado", nullable = false)
+    private boolean encerramentoInteressadoSolicitado;
+
+    @Column(name = "data_encerramento")
+    private LocalDateTime dataEncerramento;
+
+    @Column(name = "encerrada_pela_equipe", nullable = false)
+    private boolean encerradaPelaEquipe;
+
     @OneToMany(mappedBy = "conversa", cascade = CascadeType.REMOVE)
     @OrderBy("dataEnvio ASC")
     private List<Mensagem> mensagens = new ArrayList<>();
@@ -52,5 +64,30 @@ public class Conversa extends BaseEntity {
         return usuarioId != null
                 && ((donoItem != null && usuarioId.equals(donoItem.getId()))
                 || (interessado != null && usuarioId.equals(interessado.getId())));
+    }
+
+    public void solicitarEncerramento(Long usuarioId) {
+        if (!participaPorId(usuarioId)) {
+            throw new IllegalArgumentException("Usuário não participa da conversa");
+        }
+        if (usuarioId.equals(donoItem.getId())) {
+            encerramentoDonoSolicitado = true;
+        } else {
+            encerramentoInteressadoSolicitado = true;
+        }
+        if (encerramentoDonoSolicitado && encerramentoInteressadoSolicitado && dataEncerramento == null) {
+            dataEncerramento = LocalDateTime.now();
+        }
+    }
+
+    public boolean isEncerrada() {
+        return dataEncerramento != null;
+    }
+
+    public void encerrarPelaEquipe() {
+        encerradaPelaEquipe = true;
+        if (dataEncerramento == null) {
+            dataEncerramento = LocalDateTime.now();
+        }
     }
 }

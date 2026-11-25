@@ -33,7 +33,7 @@ public class AcessoService {
     public Usuario exigirAdmin(Long usuarioId) {
         Usuario u = usuarioAtivo(usuarioId);
         if (!isAdmin(u)) {
-            throw new AcessoNegadoException("Apenas administradores podem executar esta ação");
+            throw new AcessoNegadoException("Apenas a equipe de apoio pode executar esta ação");
         }
         return u;
     }
@@ -41,7 +41,7 @@ public class AcessoService {
     public Usuario exigirDonoOuAdmin(Long usuarioId, Item item) {
         Usuario u = usuarioAtivo(usuarioId);
         if (!isAdmin(u) && !item.getUsuario().getId().equals(u.getId())) {
-            throw new AcessoNegadoException("Apenas o dono do item ou um administrador pode executar esta ação");
+            throw new AcessoNegadoException("Apenas o dono do item ou a equipe de apoio pode executar esta ação");
         }
         return u;
     }

@@ -22,7 +22,7 @@ public class AdminBootstrap implements ApplicationRunner {
 
     @Value("${app.admin.email:}") private String email;
     @Value("${app.admin.password:}") private String senha;
-    @Value("${app.admin.name:Administrador}") private String nome;
+    @Value("${app.admin.name:Equipe de apoio}") private String nome;
 
     @Override
     @Transactional

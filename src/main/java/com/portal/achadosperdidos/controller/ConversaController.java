@@ -28,8 +28,18 @@ public class ConversaController {
         return service.listarDoUsuario(usuarioAtual.id(auth));
     }
 
+    @GetMapping("/equipe/ativas")
+    public List<ConversaDto.Response> listarAbertasParaEquipe(Authentication auth) {
+        return service.listarAbertasParaEquipe(usuarioAtual.id(auth));
+    }
+
     @GetMapping("/{id}")
     public ConversaDto.Response buscar(@PathVariable Long id, Authentication auth) {
         return service.buscar(usuarioAtual.id(auth), id);
+    }
+
+    @PostMapping("/{id}/encerramento")
+    public ConversaDto.Response solicitarEncerramento(@PathVariable Long id, Authentication auth) {
+        return service.solicitarEncerramento(usuarioAtual.id(auth), id);
     }
 }

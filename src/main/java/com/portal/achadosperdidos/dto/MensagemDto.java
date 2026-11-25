@@ -1,6 +1,7 @@
 package com.portal.achadosperdidos.dto;
 
 import com.portal.achadosperdidos.entity.Mensagem;
+import com.portal.achadosperdidos.enums.RoleUsuario;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -15,10 +16,12 @@ public final class MensagemDto {
     }
 
     public record Response(Long id, Long conversaId, UsuarioDto.Resumo remetente,
-                           String conteudo, LocalDateTime dataEnvio, boolean lida) {
+                           String conteudo, LocalDateTime dataEnvio, boolean lida,
+                           boolean remetenteEquipeApoio) {
         public static Response de(Mensagem m) {
             return new Response(m.getId(), m.getConversa().getId(), UsuarioDto.Resumo.de(m.getRemetente()),
-                    m.getConteudo(), m.getDataEnvio(), m.isLida());
+                    m.getConteudo(), m.getDataEnvio(), m.isLida(),
+                    m.getRemetente().getRole() == RoleUsuario.ADMIN);
         }
     }
 }

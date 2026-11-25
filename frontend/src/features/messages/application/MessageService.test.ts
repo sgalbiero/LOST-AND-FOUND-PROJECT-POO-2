@@ -20,10 +20,11 @@ class FakeMessageGateway implements MessageGateway {
   sent: { conversationId: number; content: string } | null = null
   start(): Promise<Conversation> { throw new Error('not needed') }
   listConversations(): Promise<Conversation[]> { throw new Error('not needed') }
+  requestClosure(): Promise<Conversation> { throw new Error('not needed') }
   listMessages(): Promise<Page<Message>> { throw new Error('not needed') }
   send(conversationId: number, content: string): Promise<Message> {
     this.sent = { conversationId, content }
-    return Promise.resolve({ id: 1, conversationId, sender: { id: 1, name: 'Teste' }, content, sentAt: '2026-11-23T12:00:00', read: false })
+    return Promise.resolve({ id: 1, conversationId, sender: { id: 1, name: 'Teste' }, content, sentAt: '2026-11-23T12:00:00', read: false, fromSupport: false })
   }
   markRead(): Promise<number> { throw new Error('not needed') }
   unreadTotal(): Promise<number> { throw new Error('not needed') }

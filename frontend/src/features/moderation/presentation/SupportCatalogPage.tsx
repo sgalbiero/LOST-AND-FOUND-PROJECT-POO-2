@@ -1,0 +1,19 @@
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
+import type { ManagedOption } from '../domain/Moderation'
+import { useModeration } from './ModerationContext'
+
+export function SupportCatalogPage() {
+  const service = useModeration()
+  const [categories, setCategories] = useState<ManagedOption[]>([])
+  const [locations, setLocations] = useState<ManagedOption[]>([])
+  const [error, setError] = useState('')
+  const [feedback, setFeedback] = useState('')
+  const load = useCallback((signal?: AbortSignal) => Promise.all([service.listCategories(signal), service.listLocations(signal)]).then(([c, l]) => { setCategories(c); setLocations(l) }), [service])
+  useEffect(() => { const controller = new AbortController(); load(controller.signal).catch(cause => { if (!(cause instanceof DOMException && cause.name === 'AbortError')) setError(cause.message) }); return () => controller.abort() }, [load])
+  async function act(work: () => Promise<unknown>, message: string) { setError(''); setFeedback(''); try { await work(); setFeedback(message); await load() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível concluir a ação.') } }
+  async function create(event: FormEvent<HTMLFormElement>, type: 'category' | 'location') { event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); await act(() => type === 'category' ? service.createCategory(String(data.get('nome'))) : service.createLocation(String(data.get('nome')), String(data.get('descricao') || '')), `${type === 'category' ? 'Categoria' : 'Local'} criado.`); form.reset() }
+  return <div className="page-container moderation-page"><header className="dashboard-header"><div><Link className="section-back" to="/admin">← Painel da equipe</Link><span className="eyebrow">Configuração</span><h1>Categorias e locais</h1><p>Gerencie as opções utilizadas no cadastro e na busca de itens.</p></div></header>{feedback && <div className="success-banner">{feedback}</div>}{error && <div className="form-error">{error}</div>}<div className="admin-columns"><OptionSection title="Categorias" values={categories} onCreate={event => create(event, 'category')} onToggle={(id, active) => act(() => service.toggleCategory(id, active), 'Categoria atualizada.')} /><OptionSection title="Locais" values={locations} withDescription onCreate={event => create(event, 'location')} onToggle={(id, active) => act(() => service.toggleLocation(id, active), 'Local atualizado.')} /></div></div>
+}
+
+function OptionSection({ title, values, withDescription, onCreate, onToggle }: { title: string; values: ManagedOption[]; withDescription?: boolean; onCreate(event: FormEvent<HTMLFormElement>): void; onToggle(id: number, active: boolean): void }) { return <section className="admin-section"><h2>{title}</h2><form className="admin-create" onSubmit={onCreate}><input name="nome" placeholder="Nome" maxLength={255} required />{withDescription && <input name="descricao" placeholder="Descrição (opcional)" />}<button className="button button-primary">Adicionar</button></form>{values.map(value => <div className="admin-row compact" key={value.id}><div><strong>{value.name}</strong>{value.description && <small>{value.description}</small>}</div><button className="button button-ghost" onClick={() => onToggle(value.id, !value.active)}>{value.active ? 'Desativar' : 'Ativar'}</button></div>)}</section> }

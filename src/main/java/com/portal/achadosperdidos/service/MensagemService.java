@@ -5,6 +5,7 @@ import com.portal.achadosperdidos.entity.Conversa;
 import com.portal.achadosperdidos.entity.Mensagem;
 import com.portal.achadosperdidos.entity.Usuario;
 import com.portal.achadosperdidos.repository.MensagemRepository;
+import com.portal.achadosperdidos.exception.RegraNegocioException;
 import com.portal.achadosperdidos.util.TextoUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,7 +26,10 @@ public class MensagemService {
 
     @Transactional
     public MensagemDto.Response enviar(Long usuarioId, Long conversaId, MensagemDto.Enviar req) {
-        Conversa conversa = conversaService.carregarComoParticipante(usuarioId, conversaId);
+        Conversa conversa = conversaService.carregarComAcessoMensagens(usuarioId, conversaId);
+        if (conversa.isEncerrada()) {
+            throw new RegraNegocioException("Esta conversa já foi encerrada pelos participantes");
+        }
         Usuario remetente = acesso.usuarioAtivo(usuarioId);
 
         Mensagem m = new Mensagem();
@@ -37,7 +41,7 @@ public class MensagemService {
 
     /** Histórico paginado do mais recente para o mais antigo. */
     public Page<MensagemDto.Response> listar(Long usuarioId, Long conversaId, Pageable pageable) {
-        conversaService.carregarComoParticipante(usuarioId, conversaId);
+        conversaService.carregarComAcessoMensagens(usuarioId, conversaId);
         Pageable p = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 100),
                 Sort.by(Sort.Direction.DESC, "dataEnvio"));
         return mensagemRepository.findByConversaId(conversaId, p).map(MensagemDto.Response::de);
@@ -46,12 +50,17 @@ public class MensagemService {
     /** Marca como lidas as mensagens que a outra pessoa enviou. Retorna quantas foram atualizadas. */
     @Transactional
     public int marcarComoLidas(Long usuarioId, Long conversaId) {
-        conversaService.carregarComoParticipante(usuarioId, conversaId);
+        conversaService.carregarComAcessoMensagens(usuarioId, conversaId);
         return mensagemRepository.marcarComoLidas(conversaId, usuarioId);
     }
 
     public long contarNaoLidas(Long usuarioId) {
-        acesso.usuarioAtivo(usuarioId);
+        Usuario usuario = acesso.usuarioAtivo(usuarioId);
+        if (acesso.isAdmin(usuario)) {
+            return conversaService.listarDoUsuario(usuarioId).stream()
+                    .mapToLong(com.portal.achadosperdidos.dto.ConversaDto.Response::naoLidas)
+                    .sum();
+        }
         return mensagemRepository.contarNaoLidasDoUsuario(usuarioId);
     }
 }

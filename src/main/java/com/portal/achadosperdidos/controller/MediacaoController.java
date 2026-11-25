@@ -28,6 +28,14 @@ public class MediacaoController {
         return service.solicitar(usuarioAtual.id(auth), itemId, req);
     }
 
+    @PostMapping("/conversa/{conversaId}")
+    @ResponseStatus(HttpStatus.CREATED)
+    public MediacaoDto.Response solicitarDaConversa(@PathVariable Long conversaId,
+                                                     @Valid @RequestBody MediacaoDto.Solicitar req,
+                                                     Authentication auth) {
+        return service.solicitarDaConversa(usuarioAtual.id(auth), conversaId, req);
+    }
+
     @PostMapping("/{id}/atribuicao")
     public MediacaoDto.Response assumir(@PathVariable Long id, Authentication auth) {
         return service.assumir(usuarioAtual.id(auth), id);

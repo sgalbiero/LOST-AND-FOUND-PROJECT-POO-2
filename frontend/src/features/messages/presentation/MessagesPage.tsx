@@ -14,6 +14,7 @@ export function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [closing, setClosing] = useState(false)
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [messagePage, setMessagePage] = useState(0)
   const [hasOlder, setHasOlder] = useState(false)
@@ -22,6 +23,14 @@ export function MessagesPage() {
   const selectedId = Number(params.get('conversa'))
   const itemId = Number(params.get('item'))
   const selected = conversations.find(conversation => conversation.id === selectedId) ?? null
+  const otherParticipant = selected ? (selected.owner.id === user?.id ? selected.interested : selected.owner) : null
+  const conversationTitle = selected && user?.role === 'ADMIN' ? `${selected.owner.name} e ${selected.interested.name}` : otherParticipant?.name
+  const ownRequestedClosure = selected && user
+    ? (selected.owner.id === user.id ? selected.ownerRequestedClosure : selected.interestedRequestedClosure)
+    : false
+  const otherRequestedClosure = selected && user
+    ? (selected.owner.id === user.id ? selected.interestedRequestedClosure : selected.ownerRequestedClosure)
+    : false
 
   const loadConversations = useCallback(async (signal?: AbortSignal) => {
     const result = await service.listConversations(signal)
@@ -97,6 +106,20 @@ export function MessagesPage() {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível enviar a denúncia.') }
   }
 
+  async function requestClosure() {
+    if (!selected || ownRequestedClosure || selected.closedAt) return
+    const prompt = otherRequestedClosure
+      ? `${otherParticipant?.name} já pediu o encerramento. Confirmar e encerrar a conversa agora?`
+      : `Confirmar seu pedido? A conversa só será encerrada quando ${otherParticipant?.name} também confirmar.`
+    if (!confirm(prompt)) return
+    setClosing(true); setError('')
+    try {
+      const updated = await service.requestClosure(selected.id)
+      setConversations(current => current.map(conversation => conversation.id === updated.id ? updated : conversation))
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível confirmar o encerramento.') }
+    finally { setClosing(false) }
+  }
+
   async function loadOlder() {
     if (!selected || !hasOlder) return
     setLoadingOlder(true); setError('')
@@ -114,11 +137,12 @@ export function MessagesPage() {
     <aside className="conversation-sidebar">
       <div className="conversation-sidebar-header"><div><span className="eyebrow">Central de conversas</span><h1>Mensagens</h1></div><span>{conversations.length}</span></div>
       {loading && <div className="conversation-loading skeleton" />}
-      {!loading && conversations.length === 0 && <div className="conversation-empty"><h2>Nenhuma conversa ainda</h2><p>Uma conversa pode começar pelos detalhes de um item ou após uma reivindicação aceita.</p><Link className="button button-secondary" to="/">Explorar itens</Link></div>}
+      {!loading && conversations.length === 0 && <div className="conversation-empty"><h2>{user?.role === 'ADMIN' ? 'Nenhuma mediação assumida' : 'Nenhuma conversa ainda'}</h2><p>{user?.role === 'ADMIN' ? 'Assuma um pedido no Painel da equipe para entrar na conversa.' : 'Uma conversa pode começar pelos detalhes de um item ou após uma reivindicação aceita.'}</p><Link className="button button-secondary" to={user?.role === 'ADMIN' ? '/admin/mediacoes' : '/'}>{user?.role === 'ADMIN' ? 'Ver pedidos de ajuda' : 'Explorar itens'}</Link></div>}
       <div className="conversation-list">{conversations.map(conversation => {
         const other = conversation.owner.id === user?.id ? conversation.interested : conversation.owner
+        const label = user?.role === 'ADMIN' ? `${conversation.owner.name} e ${conversation.interested.name}` : other.name
         return <button type="button" className={selectedId === conversation.id ? 'active' : ''} onClick={() => setParams({ conversa: String(conversation.id) })} key={conversation.id}>
-          <span className="conversation-avatar">{initials(other.name)}</span><span className="conversation-copy"><strong>{other.name}</strong><small>{conversation.itemTitle}</small></span>{conversation.unreadCount > 0 && <span className="unread-dot">{conversation.unreadCount}</span>}
+          <span className="conversation-avatar">{initials(label)}</span><span className="conversation-copy"><strong>{label}</strong><small>{conversation.itemTitle}</small></span>{conversation.unreadCount > 0 && <span className="unread-dot">{conversation.unreadCount}</span>}
         </button>
       })}</div>
     </aside>
@@ -126,18 +150,26 @@ export function MessagesPage() {
     <section className="chat-panel" aria-label="Conversa selecionada">
       {!selected && <div className="chat-placeholder"><div aria-hidden="true">···</div><h2>Selecione uma conversa</h2><p>Suas mensagens ficam reunidas aqui.</p></div>}
       {selected && <>
-        <header className="chat-header"><button className="chat-back" type="button" onClick={() => setParams({})} aria-label="Voltar para conversas">←</button><div><strong>{selected.owner.id === user?.id ? selected.interested.name : selected.owner.name}</strong><span>Sobre <Link to={`/itens/${selected.itemId}`}>{selected.itemTitle}</Link></span></div><Link className="button button-ghost" to={`/itens/${selected.itemId}`}>Ver item</Link></header>
-        {error && <div className="chat-error" role="alert">{error}</div>}
+        <header className="chat-header"><button className="chat-back" type="button" onClick={() => setParams({})} aria-label="Voltar para conversas">←</button><div className="chat-header-copy"><strong>{conversationTitle}</strong><span>Sobre <Link to={`/itens/${selected.itemId}`}>{selected.itemTitle}</Link></span></div><div className={`chat-header-actions ${user?.role === 'ADMIN' ? 'admin-chat-actions' : ''}`}>{user?.role !== 'ADMIN' && <Link className="button button-ghost mediation-action" to={`/mediacoes?item=${selected.itemId}&conversa=${selected.id}`}>Pedir ajuda à equipe</Link>}<button className="button button-ghost conversation-close" type="button" disabled={closing || Boolean(ownRequestedClosure) || Boolean(selected.closedAt)} onClick={requestClosure}>{selected.closedAt ? 'Conversa encerrada' : user?.role === 'ADMIN' ? 'Encerrar como equipe' : ownRequestedClosure ? `Aguardando ${otherParticipant?.name}` : otherRequestedClosure ? 'Confirmar encerramento' : closing ? 'Confirmando...' : 'Encerrar conversa'}</button><Link className="button button-ghost item-action" to={`/itens/${selected.itemId}`}>Ver item</Link></div></header>
+        <div className="chat-status-stack">
+          {error && <div className="chat-error" role="alert">{error}</div>}
+          {selected.mediation?.status === 'EM_ANDAMENTO' && selected.mediation.responsible && <div className="mediation-notice" role="status"><strong>Mediação em andamento</strong><span>{selected.mediation.responsible.name} entrou na conversa como mediador da Equipe de apoio.</span></div>}
+          {selected.mediation?.status === 'PENDENTE' && <div className="mediation-notice pending" role="status"><strong>Pedido de ajuda enviado</strong><span>Aguardando alguém da Equipe de apoio assumir a mediação.</span></div>}
+          {!selected.closedAt && ownRequestedClosure && <div className="closure-notice" role="status"><strong>Seu pedido foi registrado.</strong> A conversa continua aberta até {otherParticipant?.name} também confirmar.</div>}
+          {!selected.closedAt && otherRequestedClosure && !ownRequestedClosure && <div className="closure-notice closure-notice-action" role="status"><strong>{otherParticipant?.name} pediu para encerrar.</strong> A conversa só será encerrada se você também confirmar.</div>}
+        </div>
         <div className="message-history" aria-live="polite">
           {hasOlder && <button className="button button-ghost load-older" disabled={loadingOlder} onClick={loadOlder}>{loadingOlder ? 'Carregando...' : 'Carregar mensagens anteriores'}</button>}
           {messages.length === 0 && <div className="message-empty"><span aria-hidden="true">👋</span><h2>Comece a conversa</h2><p>Combine os próximos passos com segurança e evite compartilhar dados pessoais.</p></div>}
           {messages.map((message, index) => {
             const own = message.sender.id === user?.id
             const showDay = index === 0 || day(message.sentAt) !== day(messages[index - 1].sentAt)
-            return <div className="message-group" key={message.id}>{showDay && <div className="message-day">{formatDay(message.sentAt)}</div>}<div className={`message-bubble ${own ? 'own' : ''}`}><p>{message.content}</p><time dateTime={message.sentAt}>{formatTime(message.sentAt)}</time>{!own && <button className="message-report" type="button" onClick={() => reportMessage(message.id)}>Denunciar</button>}</div></div>
+            return <div className="message-group" key={message.id}>{showDay && <div className="message-day">{formatDay(message.sentAt)}</div>}<div className={`message-bubble ${own ? 'own' : ''} ${message.fromSupport ? 'support' : ''}`}>{message.fromSupport && <small className="support-author">Mediador · {message.sender.name}</small>}<p>{message.content}</p><time dateTime={message.sentAt}>{formatTime(message.sentAt)}</time>{!own && !message.fromSupport && <button className="message-report" type="button" onClick={() => reportMessage(message.id)}>Denunciar</button>}</div></div>
           })}
         </div>
-        <form className="message-composer" onSubmit={send}><label className="sr-only" htmlFor="message-content">Mensagem</label><textarea id="message-content" rows={1} maxLength={2000} value={content} onChange={event => setContent(event.target.value)} placeholder="Escreva uma mensagem..." /><button className="button button-primary" disabled={sending || !content.trim()}>{sending ? 'Enviando' : 'Enviar'}</button></form>
+        {selected.closedAt
+          ? <div className="conversation-closed" role="status"><strong>Conversa encerrada</strong><span>{selected.closedBySupport ? 'Encerrada pela Equipe de apoio.' : 'Os dois participantes confirmaram o encerramento.'}</span></div>
+          : <form className="message-composer" onSubmit={send}><label className="sr-only" htmlFor="message-content">Mensagem</label><textarea id="message-content" rows={1} maxLength={2000} value={content} onChange={event => setContent(event.target.value)} placeholder="Escreva uma mensagem..." /><button className="button button-primary" disabled={sending || !content.trim()}>{sending ? 'Enviando' : 'Enviar'}</button></form>}
       </>}
     </section>
   </div>

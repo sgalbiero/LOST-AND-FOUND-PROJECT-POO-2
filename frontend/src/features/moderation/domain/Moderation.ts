@@ -4,6 +4,7 @@ export interface Mediation {
   id: number
   itemId: number
   itemTitle: string
+  conversation?: { id: number; owner: { id: number; name: string }; interested: { id: number; name: string } }
   requester: { id: number; name: string }
   assignedAdmin?: { id: number; name: string }
   reason: string
@@ -28,4 +29,14 @@ export interface ManagedOption {
   name: string
   description?: string
   active: boolean
+}
+
+export interface SupportConversation {
+  id: number
+  itemId: number
+  itemTitle: string
+  owner: { id: number; name: string }
+  interested: { id: number; name: string }
+  ownerRequestedClosure: boolean
+  interestedRequestedClosure: boolean
 }

@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/favicon.ico",
                                 "/entrar", "/cadastro", "/meus-itens", "/reivindicacoes", "/mensagens",
-                                "/perfil", "/mediacoes", "/admin", "/itens/**").permitAll()
+                                  "/perfil", "/mediacoes", "/admin", "/admin/**", "/itens/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/itens/meus").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/itens", "/api/itens/*",

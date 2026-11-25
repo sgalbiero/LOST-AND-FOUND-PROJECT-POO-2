@@ -7,11 +7,13 @@ export class ModerationService {
   reportMessage(messageId: number, reason: string) { return this.gateway.reportMessage(validId(messageId), required(reason, 'Informe o motivo da denúncia.')) }
   listReports(resolved: boolean, signal?: AbortSignal) { return this.gateway.listReports(resolved, signal) }
   resolveReport(id: number) { return this.gateway.resolveReport(validId(id)) }
-  requestMediation(itemId: number, reason: string) { return this.gateway.requestMediation(validId(itemId), required(reason, 'Informe o motivo da mediação.')) }
+  requestMediation(itemId: number, reason: string, conversationId?: number) { return this.gateway.requestMediation(validId(itemId), required(reason, 'Informe o motivo da mediação.'), conversationId === undefined ? undefined : validId(conversationId)) }
   listMyMediations(signal?: AbortSignal) { return this.gateway.listMyMediations(signal) }
   listOpenMediations(signal?: AbortSignal) { return this.gateway.listOpenMediations(signal) }
   assignMediation(id: number) { return this.gateway.assignMediation(validId(id)) }
   resolveMediation(id: number, resolution: string) { return this.gateway.resolveMediation(validId(id), required(resolution, 'Informe o parecer.')) }
+  listActiveConversations(signal?: AbortSignal) { return this.gateway.listActiveConversations(signal) }
+  closeConversation(id: number) { return this.gateway.closeConversation(validId(id)) }
   listCategories(signal?: AbortSignal) { return this.gateway.listCategories(signal) }
   createCategory(name: string) { return this.gateway.createCategory(required(name, 'Informe o nome.')) }
   toggleCategory(id: number, active: boolean) { return this.gateway.toggleCategory(validId(id), active) }

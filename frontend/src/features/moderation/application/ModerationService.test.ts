@@ -25,6 +25,8 @@ class FakeGateway implements ModerationGateway {
   listOpenMediations(): Promise<never[]> { throw new Error('not needed') }
   assignMediation(): Promise<never> { throw new Error('not needed') }
   resolveMediation(): Promise<never> { throw new Error('not needed') }
+  listActiveConversations(): Promise<never[]> { throw new Error('not needed') }
+  closeConversation(): Promise<void> { throw new Error('not needed') }
   listCategories(): Promise<never[]> { throw new Error('not needed') }
   createCategory(): Promise<never> { throw new Error('not needed') }
   toggleCategory(): Promise<never> { throw new Error('not needed') }

@@ -2,6 +2,7 @@ package com.portal.achadosperdidos.service;
 
 import com.portal.achadosperdidos.dto.MediacaoDto;
 import com.portal.achadosperdidos.entity.Item;
+import com.portal.achadosperdidos.entity.Conversa;
 import com.portal.achadosperdidos.entity.Mediacao;
 import com.portal.achadosperdidos.entity.Usuario;
 import com.portal.achadosperdidos.enums.StatusMediacao;
@@ -53,8 +54,28 @@ public class MediacaoService {
             throw new ConflitoException("Já existe uma mediação em aberto para este item");
         }
 
+        return criar(solicitante, item, null, req);
+    }
+
+    @Transactional
+    public MediacaoDto.Response solicitarDaConversa(Long usuarioId, Long conversaId, MediacaoDto.Solicitar req) {
+        Usuario solicitante = acesso.usuarioAtivo(usuarioId);
+        Conversa conversa = conversaRepository.findDetalhadoById(conversaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Conversa", conversaId));
+        if (!conversa.participaPorId(usuarioId)) {
+            throw new AcessoNegadoException("Apenas participantes podem pedir ajuda para esta conversa");
+        }
+        Item item = conversa.getItem();
+        if (mediacaoRepository.existsByItemIdAndStatusNot(item.getId(), StatusMediacao.RESOLVIDO)) {
+            throw new ConflitoException("Já existe um pedido de ajuda em aberto para este item");
+        }
+        return criar(solicitante, item, conversa, req);
+    }
+
+    private MediacaoDto.Response criar(Usuario solicitante, Item item, Conversa conversa, MediacaoDto.Solicitar req) {
         Mediacao m = new Mediacao();
         m.setItem(item);
+        m.setConversa(conversa);
         m.setSolicitante(solicitante);
         m.setMotivo(TextoUtil.exigirTexto(req.motivo(), "motivo"));
         return MediacaoDto.Response.de(mediacaoRepository.save(m));
@@ -80,7 +101,7 @@ public class MediacaoService {
             throw new RegraNegocioException("Só é possível resolver uma mediação em andamento");
         }
         if (m.getAdminResponsavel() == null || !m.getAdminResponsavel().getId().equals(adminId)) {
-            throw new AcessoNegadoException("Apenas o administrador responsável pode resolver esta mediação");
+            throw new AcessoNegadoException("Apenas a pessoa responsável da equipe de apoio pode resolver esta mediação");
         }
         m.resolver(TextoUtil.exigirTexto(req.parecer(), "parecer"));
         return MediacaoDto.Response.de(m);

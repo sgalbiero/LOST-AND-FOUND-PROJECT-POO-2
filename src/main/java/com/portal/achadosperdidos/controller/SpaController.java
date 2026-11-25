@@ -8,7 +8,7 @@ public class SpaController {
 
     @GetMapping({
             "/entrar", "/cadastro", "/meus-itens", "/reivindicacoes", "/mensagens",
-            "/perfil", "/mediacoes", "/admin", "/itens/novo", "/itens/{id}",
+            "/perfil", "/mediacoes", "/admin", "/admin/{secao}", "/itens/novo", "/itens/{id}",
             "/itens/{id}/editar", "/itens/{id}/devolucao"
     })
     public String frontend() {

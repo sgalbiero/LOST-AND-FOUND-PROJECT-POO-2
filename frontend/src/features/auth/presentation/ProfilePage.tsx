@@ -24,7 +24,7 @@ export function ProfilePage() {
   }
 
   async function removeAccount() {
-    if (!confirm('Desativar sua conta? Você perderá o acesso até que um administrador a reative.')) return
+    if (!confirm('Desativar sua conta? Você perderá o acesso até que a equipe de apoio a reative.')) return
     setBusy(true); setError('')
     try { await deactivate(); navigate('/', { replace: true }) }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível desativar a conta.'); setBusy(false) }
@@ -41,7 +41,7 @@ export function ProfilePage() {
         <Field label="Telefone (opcional)" name="telefone" defaultValue={user.phone} maxLength={50} />
         <div className="form-actions"><button className="button button-primary" disabled={busy}>{busy ? 'Salvando...' : 'Salvar perfil'}</button></div>
       </form>
-      <aside className="profile-summary"><h2>Informações da conta</h2><dl><div><dt>Perfil</dt><dd>{user.role === 'ADMIN' ? 'Administrador' : 'Aluno'}</dd></div><div><dt>Cadastro</dt><dd>{formatDate(user.registeredAt)}</dd></div><div><dt>Status</dt><dd>{user.active ? 'Ativa' : 'Desativada'}</dd></div></dl><hr /><h3>Desativar conta</h3><p>Suas publicações e conversas serão preservadas para manter o histórico.</p><button className="button button-secondary" disabled={busy} onClick={removeAccount}>Desativar minha conta</button></aside>
+      <aside className="profile-summary"><h2>Informações da conta</h2><dl><div><dt>Perfil</dt><dd>{user.role === 'ADMIN' ? 'Equipe de apoio' : 'Aluno'}</dd></div><div><dt>Cadastro</dt><dd>{formatDate(user.registeredAt)}</dd></div><div><dt>Status</dt><dd>{user.active ? 'Ativa' : 'Desativada'}</dd></div></dl><hr /><h3>Desativar conta</h3><p>Suas publicações e conversas serão preservadas para manter o histórico.</p><button className="button button-secondary" disabled={busy} onClick={removeAccount}>Desativar minha conta</button></aside>
     </div>
   </div>
 }

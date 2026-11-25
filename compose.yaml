@@ -22,7 +22,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:?Configure APP_ADMIN_EMAIL no arquivo .env}
       APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:?Configure APP_ADMIN_PASSWORD no arquivo .env}
-      APP_ADMIN_NAME: ${APP_ADMIN_NAME:-Administrador}
+      APP_ADMIN_NAME: ${APP_ADMIN_NAME:-Equipe de apoio}
       REQUIRE_HTTPS: ${REQUIRE_HTTPS:-false}
       AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-20}
     depends_on:

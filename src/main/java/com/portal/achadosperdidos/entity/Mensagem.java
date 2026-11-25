@@ -1,5 +1,6 @@
 package com.portal.achadosperdidos.entity;
 
+import com.portal.achadosperdidos.enums.RoleUsuario;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -33,8 +34,10 @@ public class Mensagem extends BaseEntity {
 
     @PrePersist
     void validarRemetente() {
-        if (conversa != null && !conversa.participa(remetente)) {
-            throw new IllegalStateException("Remetente não participa desta conversa");
+        boolean participante = conversa != null && conversa.participa(remetente);
+        boolean equipeApoio = remetente != null && remetente.getRole() == RoleUsuario.ADMIN;
+        if (conversa != null && !participante && !equipeApoio) {
+            throw new IllegalStateException("Remetente não tem acesso a esta conversa");
         }
     }
 }

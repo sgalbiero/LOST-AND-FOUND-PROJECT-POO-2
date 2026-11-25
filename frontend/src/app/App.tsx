@@ -14,6 +14,10 @@ import { Layout } from './Layout'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AdminPage } from '../features/moderation/presentation/AdminPage'
 import { MediationsPage } from '../features/moderation/presentation/MediationsPage'
+import { SupportMediationsPage } from '../features/moderation/presentation/SupportMediationsPage'
+import { SupportReportsPage } from '../features/moderation/presentation/SupportReportsPage'
+import { SupportCatalogPage } from '../features/moderation/presentation/SupportCatalogPage'
+import { SupportRoute } from './SupportRoute'
 
 export function App() {
   return (
@@ -31,7 +35,10 @@ export function App() {
         <Route path="mensagens" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
         <Route path="perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="mediacoes" element={<ProtectedRoute><MediationsPage /></ProtectedRoute>} />
-        <Route path="admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+        <Route path="admin" element={<ProtectedRoute><SupportRoute><AdminPage /></SupportRoute></ProtectedRoute>} />
+        <Route path="admin/mediacoes" element={<ProtectedRoute><SupportRoute><SupportMediationsPage /></SupportRoute></ProtectedRoute>} />
+        <Route path="admin/denuncias" element={<ProtectedRoute><SupportRoute><SupportReportsPage /></SupportRoute></ProtectedRoute>} />
+        <Route path="admin/catalogo" element={<ProtectedRoute><SupportRoute><SupportCatalogPage /></SupportRoute></ProtectedRoute>} />
         <Route path="*" element={<div className="page-container"><StateView message="Esta página não existe ou mudou de endereço." action="Ir para o início" onAction={() => location.assign('/')} /></div>} />
       </Route>
     </Routes>

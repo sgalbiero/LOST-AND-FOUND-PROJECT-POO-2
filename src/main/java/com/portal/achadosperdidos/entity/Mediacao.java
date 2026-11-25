@@ -42,6 +42,10 @@ public class Mediacao extends BaseEntity {
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "conversa_id")
+    private Conversa conversa;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "solicitante_id", nullable = false)
     private Usuario solicitante;

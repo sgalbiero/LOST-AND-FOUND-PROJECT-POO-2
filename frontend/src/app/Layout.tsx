@@ -19,15 +19,16 @@ export function Layout() {
           {user && <NavLink className="nav-with-badge" to="/mensagens">Mensagens{unreadCount > 0 && <span>{unreadCount > 9 ? '9+' : unreadCount}</span>}</NavLink>}
         </nav>
         <div className="topbar-actions">
-          <Link className="button button-primary publish-button" to={user ? '/itens/novo' : '/entrar'}>Publicar item</Link>
+          <Link className="button button-primary publish-button" to={user ? '/itens/novo' : '/entrar'}>Perdi ou encontrei algo</Link>
           {user ? (
             <details className="user-menu">
               <summary aria-label="Abrir menu do usuário"><span>{initials(user.name)}</span>{user.name.split(' ')[0]}</summary>
               <div>
                 <Link to="/perfil">Meu perfil</Link>
                 <Link to="/reivindicacoes">Reivindicações</Link>
-                <Link to="/mediacoes">Minhas mediações</Link>
-                {user.role === 'ADMIN' && <Link to="/admin">Administração</Link>}
+                {user.role === 'ADMIN'
+                  ? <Link to="/admin">Painel da equipe</Link>
+                  : <Link to="/mediacoes">Pedidos de ajuda</Link>}
                 <button type="button" onClick={signOut}>Sair</button>
               </div>
             </details>
@@ -38,7 +39,7 @@ export function Layout() {
       <nav className="mobile-nav" aria-label="Navegação móvel">
         <NavLink to="/" end>Explorar</NavLink>
         <NavLink to={user ? '/meus-itens' : '/entrar'}>Meus itens</NavLink>
-        <NavLink className="mobile-publish" to={user ? '/itens/novo' : '/entrar'}>Publicar</NavLink>
+        <NavLink className="mobile-publish" to={user ? '/itens/novo' : '/entrar'}>Novo aviso</NavLink>
         <NavLink className="mobile-message-link" to={user ? '/mensagens' : '/entrar'}>Mensagens{unreadCount > 0 && <span>{unreadCount > 9 ? '9+' : unreadCount}</span>}</NavLink>
         <NavLink to={user ? '/perfil' : '/entrar'}>Perfil</NavLink>
       </nav>
