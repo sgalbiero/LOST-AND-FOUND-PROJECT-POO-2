@@ -1,4 +1,4 @@
-export type MediationStatus = 'PENDENTE' | 'EM_ANDAMENTO' | 'RESOLVIDO'
+export type MediationStatus = 'PENDENTE' | 'EM_ANDAMENTO' | 'RESOLVIDO' | 'CANCELADA'
 
 export interface Mediation {
   id: number
@@ -18,7 +18,10 @@ export interface Report {
   id: number
   reporter: { id: number; name: string }
   itemId?: number
+  itemTitle?: string
   messageId?: number
+  messageContent?: string
+  conversationId?: number
   reason: string
   resolved: boolean
   createdAt: string
@@ -39,4 +42,14 @@ export interface SupportConversation {
   interested: { id: number; name: string }
   ownerRequestedClosure: boolean
   interestedRequestedClosure: boolean
+}
+
+export interface SupportUser {
+  id: number
+  name: string
+  email: string
+  phone?: string
+  role: 'ADMIN' | 'ALUNO'
+  active: boolean
+  registeredAt: string
 }

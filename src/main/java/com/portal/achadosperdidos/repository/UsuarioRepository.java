@@ -5,6 +5,7 @@ import com.portal.achadosperdidos.enums.RoleUsuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.List;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
@@ -14,4 +15,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByEmail(String email);
 
     long countByRoleAndAtivoTrue(RoleUsuario role);
+
+    List<Usuario> findAllByOrderByNomeAsc();
 }

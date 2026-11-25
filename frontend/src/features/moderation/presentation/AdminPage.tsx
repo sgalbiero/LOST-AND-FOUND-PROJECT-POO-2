@@ -7,6 +7,7 @@ export function AdminPage() {
       <ModuleCard to="/admin/mediacoes" eyebrow="Atendimento" title="Pedidos de ajuda" description="Assuma uma mediação, entre na conversa e oriente os participantes." />
       <ModuleCard to="/admin/denuncias" eyebrow="Segurança" title="Denúncias" description="Analise conteúdos sinalizados e registre a resolução." />
       <ModuleCard to="/admin/catalogo" eyebrow="Configuração" title="Categorias e locais" description="Mantenha as opções usadas na publicação e busca de itens." />
+      <ModuleCard to="/admin/usuarios" eyebrow="Acesso" title="Usuários" description="Gerencie perfis de acesso e reative contas da comunidade." />
       <ModuleCard to="/mensagens" eyebrow="Conversas" title="Minhas mediações" description="Acesse somente as conversas dos atendimentos que você assumiu." />
     </div>
   </div>

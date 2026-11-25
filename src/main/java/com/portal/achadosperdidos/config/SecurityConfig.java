@@ -49,13 +49,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/itens", "/api/itens/*",
                                 "/api/categorias", "/api/locais").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/denuncias", "/api/mediacoes/abertas",
-                                "/api/categorias/admin", "/api/locais/admin").hasRole("ADMIN")
+                                "/api/categorias/admin", "/api/locais/admin", "/api/usuarios").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/denuncias/*/resolucao",
                                 "/api/mediacoes/*/atribuicao", "/api/mediacoes/*/resolucao",
                                 "/api/categorias", "/api/locais").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/categorias/*", "/api/locais/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/categorias/*/ativo", "/api/locais/*/ativo",
-                                "/api/usuarios/*/role").hasRole("ADMIN")
+                                "/api/usuarios/*/role", "/api/usuarios/*/ativo").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .exceptionHandling(errors -> errors

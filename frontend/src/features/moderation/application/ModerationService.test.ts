@@ -29,8 +29,13 @@ class FakeGateway implements ModerationGateway {
   closeConversation(): Promise<void> { throw new Error('not needed') }
   listCategories(): Promise<never[]> { throw new Error('not needed') }
   createCategory(): Promise<never> { throw new Error('not needed') }
+  updateCategory(): Promise<never> { throw new Error('not needed') }
   toggleCategory(): Promise<never> { throw new Error('not needed') }
   listLocations(): Promise<never[]> { throw new Error('not needed') }
   createLocation(): Promise<never> { throw new Error('not needed') }
+  updateLocation(): Promise<never> { throw new Error('not needed') }
   toggleLocation(): Promise<never> { throw new Error('not needed') }
+  listUsers(): Promise<never[]> { throw new Error('not needed') }
+  updateUserRole(): Promise<never> { throw new Error('not needed') }
+  setUserActive(): Promise<never> { throw new Error('not needed') }
 }

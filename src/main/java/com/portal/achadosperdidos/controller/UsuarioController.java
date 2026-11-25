@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
@@ -28,6 +30,11 @@ public class UsuarioController {
     public UsuarioDto.Detalhe buscarAtual(Authentication auth) {
         Long id = usuarioAtual.id(auth);
         return service.buscarPorId(id, id);
+    }
+
+    @GetMapping
+    public List<UsuarioDto.Detalhe> listar(Authentication auth) {
+        return service.listarTodos(usuarioAtual.id(auth));
     }
 
     @GetMapping("/{id}")
@@ -51,6 +58,12 @@ public class UsuarioController {
     public UsuarioDto.Detalhe alterarRole(@PathVariable Long id, @Valid @RequestBody AlterarRole requisicao,
                                           Authentication auth) {
         return service.alterarRole(usuarioAtual.id(auth), id, requisicao.role());
+    }
+
+    @PatchMapping("/{id}/ativo")
+    public UsuarioDto.Detalhe definirAtivo(@PathVariable Long id, @RequestParam boolean ativo,
+                                           Authentication auth) {
+        return service.definirAtivo(usuarioAtual.id(auth), id, ativo);
     }
 
     public record AlterarRole(@NotNull RoleUsuario role) {}

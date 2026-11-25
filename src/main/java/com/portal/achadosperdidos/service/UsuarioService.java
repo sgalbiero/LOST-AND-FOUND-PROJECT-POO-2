@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -45,6 +47,11 @@ public class UsuarioService {
         return UsuarioDto.Detalhe.de(buscarEntidade(id));
     }
 
+    public List<UsuarioDto.Detalhe> listarTodos(Long adminId) {
+        acesso.exigirAdmin(adminId);
+        return usuarioRepository.findAllByOrderByNomeAsc().stream().map(UsuarioDto.Detalhe::de).toList();
+    }
+
     @Transactional
     public UsuarioDto.Detalhe atualizar(Long usuarioId, UsuarioDto.Atualizar req) {
         Usuario u = acesso.usuarioAtivo(usuarioId);
@@ -71,6 +78,18 @@ public class UsuarioService {
         Usuario alvo = buscarEntidade(alvoId);
         impedirRemocaoDoUltimoAdmin(alvo, novaRole);
         alvo.setRole(novaRole);
+        return UsuarioDto.Detalhe.de(alvo);
+    }
+
+    @Transactional
+    public UsuarioDto.Detalhe definirAtivo(Long adminId, Long alvoId, boolean ativo) {
+        acesso.exigirAdmin(adminId);
+        if (adminId.equals(alvoId) && !ativo) {
+            throw new RegraNegocioException("Você não pode desativar sua própria conta pelo painel");
+        }
+        Usuario alvo = buscarEntidade(alvoId);
+        if (!ativo) impedirRemocaoDoUltimoAdmin(alvo, RoleUsuario.ALUNO);
+        alvo.setAtivo(ativo);
         return UsuarioDto.Detalhe.de(alvo);
     }
 

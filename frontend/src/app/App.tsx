@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useNavigate } from 'react-router-dom'
 import { LoginPage } from '../features/auth/presentation/LoginPage'
 import { RegistrationPage } from '../features/auth/presentation/RegistrationPage'
 import { ProfilePage } from '../features/auth/presentation/ProfilePage'
@@ -17,6 +17,7 @@ import { MediationsPage } from '../features/moderation/presentation/MediationsPa
 import { SupportMediationsPage } from '../features/moderation/presentation/SupportMediationsPage'
 import { SupportReportsPage } from '../features/moderation/presentation/SupportReportsPage'
 import { SupportCatalogPage } from '../features/moderation/presentation/SupportCatalogPage'
+import { SupportUsersPage } from '../features/moderation/presentation/SupportUsersPage'
 import { SupportRoute } from './SupportRoute'
 
 export function App() {
@@ -39,8 +40,14 @@ export function App() {
         <Route path="admin/mediacoes" element={<ProtectedRoute><SupportRoute><SupportMediationsPage /></SupportRoute></ProtectedRoute>} />
         <Route path="admin/denuncias" element={<ProtectedRoute><SupportRoute><SupportReportsPage /></SupportRoute></ProtectedRoute>} />
         <Route path="admin/catalogo" element={<ProtectedRoute><SupportRoute><SupportCatalogPage /></SupportRoute></ProtectedRoute>} />
-        <Route path="*" element={<div className="page-container"><StateView message="Esta página não existe ou mudou de endereço." action="Ir para o início" onAction={() => location.assign('/')} /></div>} />
+        <Route path="admin/usuarios" element={<ProtectedRoute><SupportRoute><SupportUsersPage /></SupportRoute></ProtectedRoute>} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   )
+}
+
+function NotFoundPage() {
+  const navigate = useNavigate()
+  return <div className="page-container"><StateView message="Esta página não existe ou mudou de endereço." action="Ir para o início" onAction={() => navigate('/', { replace: true })} /></div>
 }

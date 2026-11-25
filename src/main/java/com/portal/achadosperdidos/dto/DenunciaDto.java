@@ -14,12 +14,16 @@ public final class DenunciaDto {
     public record Criar(@NotBlank @Size(max = 1000) String motivo) {
     }
 
-    public record Response(Long id, UsuarioDto.Resumo denunciante, Long itemId, Long mensagemId,
+    public record Response(Long id, UsuarioDto.Resumo denunciante, Long itemId, String itemTitulo,
+                           Long mensagemId, String mensagemConteudo, Long conversaId,
                            String motivo, boolean resolvida, LocalDateTime dataCriacao) {
         public static Response de(Denuncia d) {
             return new Response(d.getId(), UsuarioDto.Resumo.de(d.getDenunciante()),
                     d.getItem() != null ? d.getItem().getId() : null,
+                    d.getItem() != null ? d.getItem().getTitulo() : null,
                     d.getMensagem() != null ? d.getMensagem().getId() : null,
+                    d.getMensagem() != null ? d.getMensagem().getConteudo() : null,
+                    d.getMensagem() != null ? d.getMensagem().getConversa().getId() : null,
                     d.getMotivo(), d.isResolvida(), d.getDataCriacao());
         }
     }

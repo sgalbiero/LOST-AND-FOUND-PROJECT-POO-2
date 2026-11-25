@@ -94,6 +94,6 @@ a porta 8080 no firewall; somente 80/443 devem ser públicos.
 ## Ajustes finais
 
 1. Executar o roteiro manual completo com PostgreSQL e dois usuários, incluindo um administrador.
-2. Substituir os prompts nativos de denúncia e parecer por modais visuais.
-3. Adicionar testes end-to-end no navegador e integração PostgreSQL em CI.
+2. Adicionar testes end-to-end no navegador e integração PostgreSQL em CI.
+3. Integrar armazenamento de arquivos para substituir os links externos usados nas fotos.
 4. Substituir HTTP Basic por tokens antes de abrir a aplicação fora do ambiente acadêmico.

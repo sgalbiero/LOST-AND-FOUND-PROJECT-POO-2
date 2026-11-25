@@ -15,6 +15,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +48,33 @@ class UsuarioServiceTest {
         assertThatThrownBy(() -> service.alterarRole(1L, 2L, RoleUsuario.ALUNO))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessageContaining("pelo menos um administrador");
+    }
+
+    @Test
+    void permiteQueAdministradorReativeUmaConta() {
+        Usuario executor = admin(1L);
+        Usuario aluno = new Usuario();
+        ReflectionTestUtils.setField(aluno, "id", 2L);
+        aluno.setNome("Aluno");
+        aluno.setRole(RoleUsuario.ALUNO);
+        aluno.setAtivo(false);
+        when(acesso.exigirAdmin(1L)).thenReturn(executor);
+        when(usuarios.findById(2L)).thenReturn(Optional.of(aluno));
+
+        var resposta = service.definirAtivo(1L, 2L, true);
+
+        assertThat(resposta.ativo()).isTrue();
+        assertThat(aluno.isAtivo()).isTrue();
+    }
+
+    @Test
+    void painelNaoPermiteAdministradorDesativarPropriaConta() {
+        Usuario executor = admin(1L);
+        when(acesso.exigirAdmin(1L)).thenReturn(executor);
+
+        assertThatThrownBy(() -> service.definirAtivo(1L, 1L, false))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("própria conta");
     }
 
     private Usuario admin(Long id) {
